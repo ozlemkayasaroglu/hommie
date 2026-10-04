@@ -6,9 +6,12 @@ import { randomUUID } from 'node:crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
-// Vercel's serverless filesystem is read-only outside /tmp, so the repo-local
-// .data dir (used for local dev) isn't writable in that environment.
-const dataDir = process.env.VERCEL
+// Serverless filesystems (Vercel, Netlify, Lambda) are read-only outside
+// /tmp, so the repo-local .data dir (used for local dev) isn't writable there.
+const isServerless = Boolean(
+  process.env.VERCEL || process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME
+);
+const dataDir = isServerless
   ? path.join(os.tmpdir(), 'hommie-data')
   : path.join(repoRoot, '.data');
 const itemsFile = path.join(dataDir, 'items.json');

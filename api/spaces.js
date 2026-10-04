@@ -147,6 +147,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ ok: false, error: 'Bu yöntem desteklenmiyor.' });
   } catch (error) {
+    console.error('[spaces] failed', req.method, error?.name, error?.message, error?.stack);
     return res.status(400).json({ ok: false, error: error?.message || 'Beklenmeyen bir hata oluştu.' });
   }
 }

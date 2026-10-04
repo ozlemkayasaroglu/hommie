@@ -6,16 +6,28 @@ const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(moduleDir, '..', '..');
 const dataDir = path.join(repoRoot, '.data');
 
-// Netlify Functions'ta dosya sistemi kalıcı değil: her çağrı kendi /tmp'sini
-// görür. Netlify üzerinde Blobs'a, yerel geliştirmede .data klasörüne yazıyoruz.
-const isNetlify = Boolean(process.env.NETLIFY || process.env.NETLIFY_LOCAL);
+// Netlify Functions'ta dosya sistemi yazılabilir değil ve kalıcı da olmaz;
+// orada Blobs'a, yerel geliştirmede .data klasörüne yazıyoruz.
+// Dikkat: NETLIFY değişkeni yalnızca build sırasında tanımlı, fonksiyon
+// çalışırken değil — çalışma zamanını Lambda değişkenlerinden anlıyoruz.
+const isNetlify = Boolean(
+  process.env.LAMBDA_TASK_ROOT ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NETLIFY_BLOBS_CONTEXT ||
+    process.env.NETLIFY_DEV
+);
 
 let blobStore = null;
 
 async function getBlobStore() {
   if (blobStore) return blobStore;
-  const { getStore } = await import('@netlify/blobs');
-  blobStore = getStore({ name: 'hommie', consistency: 'strong' });
+  try {
+    const { getStore } = await import('@netlify/blobs');
+    blobStore = getStore({ name: 'hommie', consistency: 'strong' });
+  } catch (error) {
+    console.error('[store] blob store unavailable', error?.name, error?.message);
+    throw new Error(`Depolama açılamadı: ${error?.message || 'bilinmeyen hata'}`);
+  }
   return blobStore;
 }
 
@@ -42,7 +54,12 @@ export async function readJson(key, fallback) {
 export async function writeJson(key, value) {
   if (isNetlify) {
     const store = await getBlobStore();
-    await store.setJSON(key, value);
+    try {
+      await store.setJSON(key, value);
+    } catch (error) {
+      console.error('[store] blob write failed', key, error?.name, error?.message);
+      throw new Error(`Kayıt yazılamadı: ${error?.message || 'bilinmeyen hata'}`);
+    }
     return;
   }
 

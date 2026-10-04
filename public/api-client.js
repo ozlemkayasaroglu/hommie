@@ -10,6 +10,11 @@ async function apiFetch(url, options = {}) {
     headers['x-app-password'] = state.password;
   }
 
+  if (state.spaceId && state.memberId) {
+    headers['x-space-id'] = state.spaceId;
+    headers['x-member-id'] = state.memberId;
+  }
+
   const response = await fetch(url, {
     ...options,
     headers
@@ -47,11 +52,23 @@ export async function deleteItem(id) {
   return apiFetch(`/api/items?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
-export async function analyzePhoto(room, existingNames, images) {
-  return apiFetch('/api/ai', {
+// Netlify'da senkron fonksiyonlar 10 saniyede kesiliyor; analiz arka plan
+// işinde çalışıp sonucu /api/photo-status üzerinden dönüyor.
+export async function analyzePhoto(room, style, existingNames, images) {
+  const jobId = crypto.randomUUID();
+  await apiFetch('/api/photo-background', {
     method: 'POST',
-    body: JSON.stringify({ task: 'photo', room, existingItemNames: existingNames, images })
+    body: JSON.stringify({ jobId, room, style, existingItemNames: existingNames, images })
   });
+
+  const deadline = Date.now() + 180000;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const status = await apiFetch(`/api/photo-status?jobId=${encodeURIComponent(jobId)}`);
+    if (status.status === 'done') return status.result;
+  }
+
+  throw new Error('Analiz çok uzun sürdü, tekrar dener misin?');
 }
 
 export async function requestImageLookup(id, name) {
@@ -65,5 +82,43 @@ export async function uploadUserImage(itemId, dataURL) {
   return apiFetch('/api/upload', {
     method: 'POST',
     body: JSON.stringify({ itemId, dataURL })
+  });
+}
+
+export async function createSpace(spaceName, memberName) {
+  return apiFetch('/api/spaces', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'create', spaceName, memberName })
+  });
+}
+
+export async function joinSpace(code, memberName) {
+  return apiFetch('/api/spaces', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'join', code, memberName })
+  });
+}
+
+export async function fetchSpace() {
+  return apiFetch('/api/spaces', { method: 'GET' });
+}
+
+export async function renameSpace(name) {
+  return apiFetch('/api/spaces', {
+    method: 'PATCH',
+    body: JSON.stringify({ name })
+  });
+}
+
+export async function removeSpaceMember(memberId) {
+  return apiFetch(`/api/spaces?memberId=${encodeURIComponent(memberId)}`, {
+    method: 'DELETE'
+  });
+}
+
+export async function importSheet(fileName, base64) {
+  return apiFetch('/api/import', {
+    method: 'POST',
+    body: JSON.stringify({ fileName, file: base64 })
   });
 }

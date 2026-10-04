@@ -1,4 +1,4 @@
-import { state, getSummary, getVisibleItems, escapeHtml } from "./state.js";
+import { state, getSummary, getVisibleItems, escapeHtml, isSpaceOwner } from "./state.js";
 import { resolveIconSvg } from "./icons.js";
 
 const roomColorMap = {
@@ -30,46 +30,33 @@ function getHeroMessage() {
 function animateEyebrow(target) {
   const words = [
     "HOMMIE",
-    "sweetie",
-    "honey",
-    "cutie",
-    "darling",
-    "my love",
-    "hey, you",
-    "trouble",
-    "pretty",
-    "hot stuff",
-    "my weakness",
-    "my home",
-    "my person",
-    "roomie",
-    "favorite human",
-    "still you.",
-    "little menace",
-    "you again?",
-    "my chaos",
-    "troublemaker",
-    "partner in crime",
-    "baby",
-    "babe",
-    "sweetheart",
-    "sunshine",
-    "lovey",
-    "handsome",
-    "pretty thing",
-    "my favorite",
-    "lucky me",
-    "yours truly",
-    "come here",
-    "look at you",
-    "miss you",
-    "lovebug",
-    "boo",
-    "xoxo",
-    "just us",
-    "us, always",
-    "home sweet home",
-    "mine. 😏",
+    "selam",
+    "hey sen",
+    "yine mi sen?",
+    "baş belası",
+    "kaos ustası",
+    "ev halkı",
+    "liste delisi",
+    "koli kahramanı",
+    "bugün olur mu?",
+    "az kaldı",
+    "sen yaparsın",
+    "hadi bakalım",
+    "bir tık daha",
+    "oda oda",
+    "zürafa onaylı",
+    "kutular konuşuyor",
+    "burası senin",
+    "düzen geliyor",
+    "neredeyse ev",
+    "işte böyle",
+    "devam et",
+    "bak sen şuna",
+    "fena değil",
+    "eh işte",
+    "yavaş yavaş",
+    "bir gün biter",
+    "ev olacak. 😏",
   ];
 
   let wordIndex = 0;
@@ -94,36 +81,44 @@ function animateEyebrow(target) {
     }, nextDelay);
   };
 
-  target._typingTimer = timeoutId;
   tick();
+
+  return () => {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  };
 }
 
 export function renderHero() {
   const hero = document.getElementById("hero");
   const summary = getSummary();
-  hero.innerHTML = `
+
+  if (!hero.querySelector(".hero-copy")) {
+    hero.innerHTML = `
     <div class="hero-copy">
+      
       <div class="eyebrow">
         <span class="eyebrow-word" aria-live="polite"></span>
       </div>
       <h1 class="hero-title">
-        <span class="hero-line">Messy now.</span>
-        <span class="hero-line">Home later.</span>
+        <span class="hero-line">Şimdilik dağınık.</span>
+        <span class="hero-line">Yakında ev.</span>
       </h1>
-     
+      <p class="hero-subtitle"></p>
     </div>
     <div class="hero-visual">
       <img class="hero-giraffe" src="/assets/giraffe.png" alt="Hommie zürafa" />
     </div>
   `;
 
-  const wordEl = hero.querySelector(".eyebrow-word");
-  if (wordEl) {
-    if (wordEl._typingTimer) {
-      window.clearTimeout(wordEl._typingTimer);
+    const wordEl = hero.querySelector(".eyebrow-word");
+    if (wordEl) {
+      if (typeof wordEl._stopTyping === "function") wordEl._stopTyping();
+      wordEl._stopTyping = animateEyebrow(wordEl);
     }
-    animateEyebrow(wordEl);
   }
+
+  const message = hero.querySelector(".hero-subtitle");
+  if (message) message.textContent = getHeroMessage();
 
   const progress = document.getElementById("progressStats");
   progress.innerHTML = `
@@ -132,17 +127,19 @@ export function renderHero() {
   `;
 }
 
+const roomIconMap = {
+  Genel: "🏠",
+  Salon: "🛋️",
+  Mutfak: "🍳",
+  "Yatak Odası": "🛏️",
+  Banyo: "🛁",
+  Balkon: "🪴",
+  Antre: "🚪",
+};
+
 export function renderRoomFilters() {
   const container = document.getElementById("roomFilters");
-  const rooms = [
-    "Genel",
-    "Salon",
-    "Mutfak",
-    "Yatak Odası",
-    "Banyo",
-    "Balkon",
-    "Antre",
-  ];
+  const rooms = Object.keys(roomIconMap);
   const counts = {};
   rooms.forEach((room) => {
     const roomItems = state.items.filter((item) =>
@@ -154,8 +151,9 @@ export function renderRoomFilters() {
   container.innerHTML = rooms
     .map(
       (room) => `
-    <button class="room-pill ${state.activeRoom === room ? "active" : ""}" data-room="${room}">
-      <span>${room}</span>
+    <button type="button" class="room-pill ${state.activeRoom === room ? "active" : ""}" data-room="${room}">
+      <span class="room-icon" aria-hidden="true">${roomIconMap[room]}</span>
+      <span class="room-name">${escapeHtml(room)}</span>
       <span class="badge-count">${counts[room]}</span>
     </button>
   `,
@@ -171,6 +169,11 @@ export function renderFilters() {
   statusEl.value = state.statusFilter;
   priorityEl.value = state.priorityFilter;
   sortEl.value = state.sort;
+
+  const totalEl = document.getElementById("filterTotal");
+  if (totalEl) {
+    totalEl.innerHTML = `Toplam <strong>${getVisibleItems().length}</strong> kayıt`;
+  }
 }
 
 function renderNoteField(item) {
@@ -195,7 +198,7 @@ function itemImageMarkup(item) {
 
   if (shouldShowImage) {
     return `
-      <div class="card-image" style="background:${roomColor}">
+      <div class="card-image" data-room="${escapeHtml(item.room || "")}" style="background:${roomColor}">
         <img class="card-photo" src="${escapeHtml(imageSrc)}" alt="${escapeHtml(item.name || "Öğe görseli")}" loading="lazy" />
         <div class="room-chip">${escapeHtml(item.room)}</div>
       </div>
@@ -203,7 +206,7 @@ function itemImageMarkup(item) {
   }
 
   return `
-    <div class="card-image fallback" style="background:${roomColor}">
+    <div class="card-image fallback" data-room="${escapeHtml(item.room || "")}" style="background:${roomColor}">
       <div class="fallback-icon">${fallback}</div>
       <div class="room-chip">${escapeHtml(item.room)}</div>
     </div>
@@ -290,7 +293,7 @@ export function renderPhotoSuggestions() {
   if (!list) return;
 
   if (!state.photoSuggestions.length) {
-    list.innerHTML = "<p>Öneri bulunamadı.</p>";
+    list.innerHTML = `<p>Fotoğraf yükleyip <strong>${escapeHtml(state.photoStyle)}</strong> tarzında öneri al.</p>`;
     return;
   }
 
@@ -301,7 +304,10 @@ export function renderPhotoSuggestions() {
       <input type="checkbox" value="${index}" data-photo-check="${index}" />
       <span>
         <strong>${escapeHtml(suggestion.name)}</strong>
-        <small>${escapeHtml(suggestion.room)} • ${escapeHtml(suggestion.reason || "")}</small>
+        <small>${[suggestion.category, suggestion.room]
+          .filter(Boolean)
+          .map((part) => escapeHtml(part))
+          .join(" • ")} • ${escapeHtml(suggestion.reason || "")}</small>
       </span>
     </label>
   `,
@@ -316,4 +322,39 @@ export function showToast(message) {
   toast.classList.add("visible");
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove("visible"), 2200);
+}
+
+export function renderSpace() {
+  const button = document.getElementById("spaceButton");
+  const label = document.getElementById("spaceButtonLabel");
+  if (!button || !label) return;
+
+  button.hidden = !state.space;
+  if (!state.space) return;
+  label.textContent = state.space.name;
+
+  const nameInput = document.getElementById("spaceNameInput");
+  if (nameInput && document.activeElement !== nameInput) {
+    nameInput.value = state.space.name;
+    nameInput.disabled = !isSpaceOwner();
+  }
+
+  const code = document.getElementById("inviteCode");
+  if (code) code.textContent = state.space.invite_code;
+
+  const list = document.getElementById("memberList");
+  if (list) {
+    list.innerHTML = state.members
+      .map((member) => {
+        const isSelf = member.id === state.memberId;
+        const canRemove = isSpaceOwner() && !isSelf;
+        return `
+      <li class="member-row">
+        <span class="member-name">${escapeHtml(member.name)}${isSelf ? " (sen)" : ""}</span>
+        <span class="member-role">${escapeHtml(member.role)}</span>
+        ${canRemove ? `<button type="button" class="mini-btn" data-remove-member="${member.id}">Çıkar</button>` : ""}
+      </li>`;
+      })
+      .join("");
+  }
 }

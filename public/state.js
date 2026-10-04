@@ -5,6 +5,11 @@ export const state = {
   priorityFilter: 'Tümü',
   sort: 'priority',
   password: localStorage.getItem('hommie-app-password') || '',
+  spaceId: localStorage.getItem('hommie-space-id') || '',
+  memberId: localStorage.getItem('hommie-member-id') || '',
+  space: null,
+  member: null,
+  members: [],
   isLoading: false,
   isMutating: false,
   isPhotoAnalyzing: false,
@@ -13,6 +18,7 @@ export const state = {
   selectedPhotoSuggestions: new Set(),
   activeView: 'list',
   photoRoom: 'Salon',
+  photoStyle: 'İskandinav',
   pollTimer: null,
   lastInteractionTs: Date.now()
 };
@@ -40,6 +46,26 @@ export function getSummary() {
   const remaining = total - complete;
   const percent = total ? Math.round((complete / total) * 100) : 0;
   return { total, complete, remaining, percent };
+}
+
+export function saveSpaceSession(space, member) {
+  state.space = space || null;
+  state.member = member || null;
+  state.spaceId = space?.id || '';
+  state.memberId = member?.id || '';
+  if (state.spaceId) localStorage.setItem('hommie-space-id', state.spaceId);
+  else localStorage.removeItem('hommie-space-id');
+  if (state.memberId) localStorage.setItem('hommie-member-id', state.memberId);
+  else localStorage.removeItem('hommie-member-id');
+}
+
+export function clearSpaceSession() {
+  saveSpaceSession(null, null);
+  state.members = [];
+}
+
+export function isSpaceOwner() {
+  return state.member?.role === 'sahip';
 }
 
 export function escapeHtml(value = '') {

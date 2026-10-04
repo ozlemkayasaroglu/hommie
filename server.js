@@ -84,6 +84,10 @@ async function routeApi(req, res, url) {
   const pathname = url.pathname;
   const handlers = {
     '/api/items': () => import('./api/items.js'),
+    '/api/spaces': () => import('./api/spaces.js'),
+    '/api/import': () => import('./api/import.js'),
+    '/api/photo-background': () => import('./api/photo-background.js'),
+    '/api/photo-status': () => import('./api/photo-status.js'),
     '/api/ai': () => import('./api/ai.js'),
     '/api/image': () => import('./api/image.js'),
     '/api/upload': () => import('./api/upload.js')

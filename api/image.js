@@ -1,4 +1,4 @@
-import { readItems, writeItems } from './_lib/supabase.js';
+import { readItems, writeItems } from './_lib/items-store.js';
 import { isPasswordAllowed } from './_lib/auth.js';
 
 async function readBody(req) {

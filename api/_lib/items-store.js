@@ -1,20 +1,7 @@
-import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
+import { readJson, writeJson } from './store.js';
 
-const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(moduleDir, '..', '..');
-// Serverless filesystems (Vercel, Netlify, Lambda) are read-only outside
-// /tmp, so the repo-local .data dir (used for local dev) isn't writable there.
-const isServerless = Boolean(
-  process.env.VERCEL || process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME
-);
-const dataDir = isServerless
-  ? path.join(os.tmpdir(), 'hommie-data')
-  : path.join(repoRoot, '.data');
-const itemsFile = path.join(dataDir, 'items.json');
+const ITEMS_KEY = 'items';
 
 export const defaultSeedItems = [
   { id: 'a7e7c6aa-df04-432a-ae46-d8b18eda32a5', name: 'Elektrik aboneliği devri', room: 'Genel', type: 'Resmi iş', priority: 1, status: 'Yapılmadı', note: '', price: null, image_url: null, image_path: null, image_credit: null, image_tried: false, created_at: '2026-09-01T10:00:00.000Z' },
@@ -66,25 +53,18 @@ const normalizeSeed = (items) => items.map((item) => ({
   created_at: item.created_at || new Date().toISOString()
 }));
 
-export async function ensureDataFile() {
-  await fs.mkdir(dataDir, { recursive: true });
-  try {
-    await fs.access(itemsFile);
-  } catch {
-    await fs.writeFile(itemsFile, JSON.stringify(normalizeSeed(defaultSeedItems), null, 2), 'utf8');
-  }
-}
-
 export async function readItems() {
-  await ensureDataFile();
-  const raw = await fs.readFile(itemsFile, 'utf8');
-  const parsed = JSON.parse(raw || '[]');
-  return Array.isArray(parsed) ? parsed : [];
+  const items = await readJson(ITEMS_KEY, null);
+  if (Array.isArray(items)) return items;
+
+  // İlk açılış: başlangıç listesini bir kez yaz.
+  const seeded = normalizeSeed(defaultSeedItems);
+  await writeJson(ITEMS_KEY, seeded);
+  return seeded;
 }
 
 export async function writeItems(items) {
-  await ensureDataFile();
-  await fs.writeFile(itemsFile, JSON.stringify(items, null, 2), 'utf8');
+  await writeJson(ITEMS_KEY, items);
 }
 
 export function createItemRecord(input) {
@@ -97,8 +77,4 @@ export function createItemRecord(input) {
     image_credit: input.image_credit ?? null,
     image_tried: Boolean(input.image_tried)
   };
-}
-
-export function isSupabaseConfigured() {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }

@@ -1,6 +1,22 @@
-import { readItems, writeItems, createItemRecord } from './_lib/supabase.js';
+import { readItems, writeItems, createItemRecord } from './_lib/items-store.js';
 import { isPasswordAllowed } from './_lib/auth.js';
 import { validateCreatePayload, validatePatchPayload, createSortComparator } from './_lib/validation.js';
+import { getMember } from './_lib/spaces.js';
+
+// Alan bağlamı: istek bir alana üyeyse öğeler o alanla sınırlanır.
+// Henüz alanı olmayan kurulumlarda (eski kayıtlar) space_id boş kalır.
+async function resolveSpace(req) {
+  const spaceId = String(req.headers['x-space-id'] || '');
+  const memberId = String(req.headers['x-member-id'] || '');
+  if (!spaceId || !memberId) return null;
+  const member = await getMember(spaceId, memberId);
+  return member ? spaceId : null;
+}
+
+function belongsToSpace(item, spaceId) {
+  if (!spaceId) return !item.space_id;
+  return item.space_id === spaceId;
+}
 
 async function readBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
@@ -39,8 +55,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    const spaceId = await resolveSpace(req);
+
     if (req.method === 'GET') {
-      const items = (await readItems()).sort(createSortComparator());
+      const items = (await readItems())
+        .filter((item) => belongsToSpace(item, spaceId))
+        .sort(createSortComparator());
       return jsonResponse(res, 200, { ok: true, items });
     }
 
@@ -50,6 +70,7 @@ export default async function handler(req, res) {
       const items = await readItems();
       const item = createItemRecord({
         ...validated,
+        space_id: spaceId,
         priority: Number(validated.priority),
         status: validated.status,
         note: validated.note || '',
@@ -74,7 +95,9 @@ export default async function handler(req, res) {
       const validated = validatePatchPayload(payload);
       const items = await readItems();
       const targetId = String(id);
-      const index = items.findIndex((item) => String(item.id) === targetId);
+      const index = items.findIndex(
+        (item) => String(item.id) === targetId && belongsToSpace(item, spaceId)
+      );
       if (index === -1) {
         return jsonResponse(res, 404, { ok: false, error: 'Item not found.' });
       }
@@ -92,7 +115,9 @@ export default async function handler(req, res) {
       }
 
       const items = await readItems();
-      const next = items.filter((item) => String(item.id) !== String(id));
+      const next = items.filter(
+        (item) => !(String(item.id) === String(id) && belongsToSpace(item, spaceId))
+      );
       if (next.length === items.length) {
         return jsonResponse(res, 404, { ok: false, error: 'Item not found.' });
       }

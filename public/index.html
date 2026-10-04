@@ -1,13 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hommie</title>
-    <meta name="description" content="Hommie - ev planlama ve tamamlama listesi" />
+    <meta
+      name="description"
+      content="Hommie - ev planlama ve tamamlama listesi"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&family=Special+Elite:wght@400&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&family=Special+Elite:wght@400&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -16,13 +22,22 @@
 
       <section class="toolbar" aria-label="Filtreleme ve sıralama">
         <div class="toolbar-header">
-          <div class="toolbar-title">🦒 Zürafa bakıyor</div>
+          <div class="toolbar-title"><span class="toolbar-logo">🦒</span></div>
           <div class="toolbar-meta">Durum, oda ve öncelik</div>
         </div>
-        <div id="roomFilters" class="room-filters" aria-label="Oda filtresi"></div>
+        <div
+          id="roomFilters"
+          class="room-filters"
+          aria-label="Oda filtresi"
+        ></div>
+
+        <div class="toolbar-divider"></div>
+
         <div class="toolbar-row">
           <label class="field compact">
-            <span>Durum</span>
+            <span class="field-label"
+              ><span class="field-icon">☰</span> Durum</span
+            >
             <select id="statusFilter">
               <option value="Tümü">Tümü</option>
               <option value="Yapılmadı">Yapılmadı</option>
@@ -33,7 +48,9 @@
           </label>
 
           <label class="field compact">
-            <span>Öncelik</span>
+            <span class="field-label"
+              ><span class="field-icon">⚑</span> Öncelik</span
+            >
             <select id="priorityFilter">
               <option value="Tümü">Tümü</option>
               <option value="1">1 - Acil</option>
@@ -42,8 +59,10 @@
             </select>
           </label>
 
-          <label class="field compact">
-            <span>Sıralama</span>
+          <label class="field compact field-wide">
+            <span class="field-label"
+              ><span class="field-icon">↕</span> Sıralama</span
+            >
             <select id="sortFilter">
               <option value="priority">Öncelik</option>
               <option value="newest">En yeni</option>
@@ -52,21 +71,61 @@
             </select>
           </label>
         </div>
+
+        <div class="toolbar-footer">
+          <button type="button" id="clearFilters" class="clear-filters">
+            <span aria-hidden="true">⟳</span> Filtreleri temizle
+          </button>
+          <div id="filterTotal" class="filter-total"></div>
+        </div>
       </section>
 
       <section class="actions-bar">
-        <button id="photoTabButton" class="secondary-button">Foto analizi</button>
+        <button id="photoTabButton" class="secondary-button">
+          Foto analizi
+        </button>
         <button id="addItemButton" class="secondary-button">Yeni öğe</button>
+        <button id="importButton" class="secondary-button">Excel'den ekle</button>
+        <input
+          id="importInput"
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          hidden
+        />
+        <button id="spaceButton" class="secondary-button" hidden>
+          <span id="spaceButtonLabel">Alan ayarları</span>
+        </button>
       </section>
 
-      <section id="progressStats" class="progress-panel" aria-live="polite"></section>
+      <section
+        id="progressStats"
+        class="progress-panel"
+        aria-live="polite"
+      ></section>
 
       <main>
         <section id="photoPanel" class="photo-panel" hidden>
           <div class="panel-head">
             <h2>Foto analizi</h2>
           </div>
+          <p class="panel-hint">
+            Boş ya da eksik kalan köşenin fotoğrafını yükle, tarzını seç —
+            zürafa sana ürün önersin.
+          </p>
           <div class="photo-controls">
+            <label class="field">
+              <span>Tarz</span>
+              <select id="photoStyle">
+                <option value="İskandinav">İskandinav</option>
+                <option value="Japandi">Japandi</option>
+                <option value="Minimal">Minimal</option>
+                <option value="Modern">Modern</option>
+                <option value="Bohem">Bohem</option>
+                <option value="Endüstriyel">Endüstriyel</option>
+                <option value="Rustik">Rustik</option>
+                <option value="Mid-century">Mid-century</option>
+              </select>
+            </label>
             <label class="field">
               <span>Oda</span>
               <select id="photoRoom">
@@ -83,10 +142,14 @@
               <span>Fotoğraflar</span>
               <input id="photoInput" type="file" accept="image/*" multiple />
             </label>
-            <button id="photoAnalyzeButton" class="primary-button">Analiz et</button>
+            <button id="photoAnalyzeButton" class="primary-button">
+              Analiz et
+            </button>
           </div>
           <div id="photoSuggestions" class="suggestions-list"></div>
-          <button id="addSuggestedButton" class="secondary-button" hidden>Seçilenleri ekle</button>
+          <button id="addSuggestedButton" class="secondary-button" hidden>
+            Seçilenleri ekle
+          </button>
         </section>
 
         <section id="cardList" class="card-list" aria-live="polite"></section>
@@ -97,7 +160,14 @@
       <form id="itemForm" method="dialog">
         <div class="modal-header">
           <h2 id="modalTitle">Yeni öğe</h2>
-          <button type="button" class="close-button" data-close-modal="itemModal" aria-label="Kapat">×</button>
+          <button
+            type="button"
+            class="close-button"
+            data-close-modal="itemModal"
+            aria-label="Kapat"
+          >
+            ×
+          </button>
         </div>
 
         <div class="form-grid">
@@ -156,7 +226,13 @@
 
         <div class="modal-actions">
           <button type="submit" class="primary-button">Kaydet</button>
-          <button type="button" class="secondary-button" data-close-modal="itemModal">İptal</button>
+          <button
+            type="button"
+            class="secondary-button"
+            data-close-modal="itemModal"
+          >
+            İptal
+          </button>
         </div>
       </form>
     </dialog>
@@ -170,15 +246,125 @@
             <p>Bu evin listesi biraz özel. Şifreyi gir bakalım.</p>
             <label class="field">
               <span>Şifre</span>
-              <input id="passwordInput" type="password" autocomplete="current-password" required />
+              <input
+                id="passwordInput"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
             </label>
-            <div id="passwordError" class="error-text" hidden>Şifre yanlış. Tekrar deneyin.</div>
+            <div id="passwordError" class="error-text" hidden>
+              Şifre yanlış. Tekrar deneyin.
+            </div>
             <div class="modal-actions">
               <button type="submit" class="primary-button">Giriş</button>
             </div>
           </div>
         </div>
       </form>
+    </dialog>
+
+
+    <dialog id="spaceOnboarding" class="modal space-modal">
+      <div class="space-onboarding">
+        <h2>Hommie'ye hoş geldin</h2>
+        <p class="panel-hint">
+          Evini takip etmek için bir alan oluştur ya da sana gelen davet
+          koduyla var olan bir alana katıl.
+        </p>
+
+        <div class="space-tabs" role="tablist">
+          <button type="button" class="space-tab active" data-space-tab="create">
+            Alan oluştur
+          </button>
+          <button type="button" class="space-tab" data-space-tab="join">
+            Davet koduyla katıl
+          </button>
+        </div>
+
+        <form id="createSpaceForm" class="space-form" data-space-panel="create">
+          <label class="field">
+            <span>Alanına bir isim ver</span>
+            <input id="newSpaceName" type="text" maxlength="40" placeholder="Yeni ev" required />
+          </label>
+          <label class="field">
+            <span>Sana nasıl seslenelim?</span>
+            <input id="newSpaceMemberName" type="text" maxlength="30" placeholder="Adın" required />
+          </label>
+          <div class="modal-actions">
+            <button type="submit" class="primary-button">Oluştur</button>
+          </div>
+        </form>
+
+        <form id="joinSpaceForm" class="space-form" data-space-panel="join" hidden>
+          <label class="field">
+            <span>Davet kodu</span>
+            <input
+              id="joinSpaceCode"
+              type="text"
+              maxlength="7"
+              placeholder="ABC123"
+              autocapitalize="characters"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>Sana nasıl seslenelim?</span>
+            <input id="joinSpaceMemberName" type="text" maxlength="30" placeholder="Adın" required />
+          </label>
+          <div id="joinSpaceError" class="error-text" hidden>
+            Bu davet kodu geçerli değil.
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="primary-button">Katıl</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog id="spaceDialog" class="modal space-modal">
+      <div class="space-settings">
+        <div class="panel-head">
+          <h2>Alan ayarları</h2>
+          <button
+            type="button"
+            id="closeSpaceDialog"
+            class="icon-button"
+            aria-label="Kapat"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form id="spaceNameForm" class="space-form">
+          <label class="field">
+            <span>Alan adı</span>
+            <input id="spaceNameInput" type="text" maxlength="40" required />
+          </label>
+          <div class="modal-actions">
+            <button type="submit" class="secondary-button">Kaydet</button>
+          </div>
+        </form>
+
+        <div class="invite-box">
+          <span class="invite-label">Davet kodu</span>
+          <strong id="inviteCode" class="invite-code"></strong>
+          <button type="button" id="copyInviteButton" class="secondary-button">
+            Davet bağlantısını kopyala
+          </button>
+        </div>
+
+        <div class="members-box">
+          <h3>Üyeler</h3>
+          <ul id="memberList" class="member-list"></ul>
+        </div>
+
+        <div class="modal-actions space-danger">
+          <button type="button" id="leaveSpaceButton" class="secondary-action">
+            Alandan ayrıl
+          </button>
+        </div>
+      </div>
     </dialog>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>

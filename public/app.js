@@ -5,9 +5,15 @@ import {
   deleteItem,
   analyzePhoto,
   requestImageLookup,
-  uploadUserImage
+  uploadUserImage,
+  importSheet,
+  createSpace,
+  joinSpace,
+  fetchSpace,
+  renameSpace,
+  removeSpaceMember
 } from './api-client.js';
-import { state } from './state.js';
+import { state, saveSpaceSession, clearSpaceSession } from './state.js';
 import {
   renderHero,
   renderRoomFilters,
@@ -15,6 +21,7 @@ import {
   renderCards,
   renderPhotoPanel,
   renderPhotoSuggestions,
+  renderSpace,
   showToast
 } from './ui.js';
 import { renderBilge } from './bilge.js';
@@ -36,6 +43,7 @@ function renderAll() {
   renderCards();
   renderPhotoPanel();
   renderPhotoSuggestions();
+  renderSpace();
 }
 
 function openItemModal(item = null) {
@@ -183,14 +191,22 @@ function attachPhotoSelectionHandlers() {
 
 async function compressImage(file) {
   const imageBitmap = await createImageBitmap(file);
-  const maxSize = 768;
+  const maxSize = 640;
   const scale = Math.min(1, maxSize / Math.max(imageBitmap.width, imageBitmap.height));
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, Math.round(imageBitmap.width * scale));
   canvas.height = Math.max(1, Math.round(imageBitmap.height * scale));
   const context = canvas.getContext('2d');
   context.drawImage(imageBitmap, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.82);
+
+  // NVIDIA inline image_url payload limiti ~180KB; sigana kadar kaliteyi kis.
+  let quality = 0.78;
+  let dataUrl = canvas.toDataURL('image/jpeg', quality);
+  while (dataUrl.length > 170000 && quality > 0.35) {
+    quality -= 0.12;
+    dataUrl = canvas.toDataURL('image/jpeg', quality);
+  }
+  return dataUrl;
 }
 
 async function handlePhotoAnalyze() {
@@ -203,12 +219,21 @@ async function handlePhotoAnalyze() {
   state.isPhotoAnalyzing = true;
   try {
     const converted = await Promise.all(files.map((file) => compressImage(file)));
-    const result = await analyzePhoto(state.photoRoom || 'Salon', state.items.map((item) => item.name), converted);
+    const result = await analyzePhoto(
+      state.photoRoom || 'Salon',
+      state.photoStyle || 'İskandinav',
+      state.items.map((item) => item.name),
+      converted
+    );
     state.photoSuggestions = Array.isArray(result?.suggestions) ? result.suggestions : [];
     addSuggestedButton.hidden = state.photoSuggestions.length === 0;
     renderPhotoSuggestions();
     attachPhotoSelectionHandlers();
-    showToast(`${state.photoSuggestions.length} öneri hazır.`);
+    if (result?.source === 'nvidia') {
+      showToast(`${state.photoStyle} tarzında ${state.photoSuggestions.length} öneri hazır.`);
+    } else {
+      showToast(result?.notice || 'Zürafa cevap veremedi, örnek öneriler gösteriliyor.');
+    }
   } catch (error) {
     if (error?.message === 'rate_limited') {
       showToast('Bir dakika sonra tekrar dene.');
@@ -239,7 +264,7 @@ async function handleAddSuggested() {
         type: suggestion.type || 'Alınacak',
         priority: Number(suggestion.priority || 3),
         status: 'Yapılmadı',
-        note: suggestion.reason || ''
+        note: [suggestion.reason, suggestion.style ? `(${suggestion.style})` : ''].filter(Boolean).join(' ')
       });
     }
     await loadItems();
@@ -285,10 +310,17 @@ function setupEvents() {
     renderPhotoPanel();
   });
   document.getElementById('addItemButton').addEventListener('click', () => openItemModal());
+  document.getElementById('importButton').addEventListener('click', () => {
+    document.getElementById('importInput').click();
+  });
+  document.getElementById('importInput').addEventListener('change', handleSheetImport);
   document.getElementById('photoAnalyzeButton').addEventListener('click', handlePhotoAnalyze);
   document.getElementById('addSuggestedButton').addEventListener('click', handleAddSuggested);
   document.getElementById('photoRoom').addEventListener('change', (event) => {
     state.photoRoom = event.target.value;
+  });
+  document.getElementById('photoStyle').addEventListener('change', (event) => {
+    state.photoStyle = event.target.value;
   });
 
   document.getElementById('roomFilters').addEventListener('click', (event) => {
@@ -310,6 +342,14 @@ function setupEvents() {
 
   document.getElementById('sortFilter').addEventListener('change', (event) => {
     state.sort = event.target.value;
+    renderAll();
+  });
+
+  document.getElementById('clearFilters').addEventListener('click', () => {
+    state.activeRoom = 'Genel';
+    state.statusFilter = 'Tümü';
+    state.priorityFilter = 'Tümü';
+    state.sort = 'priority';
     renderAll();
   });
 
@@ -378,11 +418,197 @@ function setupEvents() {
   });
 }
 
+
+const spaceOnboarding = document.getElementById('spaceOnboarding');
+const spaceDialog = document.getElementById('spaceDialog');
+
+function openSpaceOnboarding(prefillCode = '') {
+  if (spaceOnboarding.open) return;
+  if (prefillCode) {
+    switchSpaceTab('join');
+    document.getElementById('joinSpaceCode').value = prefillCode;
+  }
+  state.isModalOpen = true;
+  spaceOnboarding.showModal();
+}
+
+function switchSpaceTab(tab) {
+  document.querySelectorAll('[data-space-tab]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.spaceTab === tab);
+  });
+  document.querySelectorAll('[data-space-panel]').forEach((panel) => {
+    panel.hidden = panel.dataset.spacePanel !== tab;
+  });
+}
+
+async function adoptSpaceResult(result) {
+  saveSpaceSession(result.space, result.member);
+  state.members = Array.isArray(result.members) ? result.members : [];
+  state.isModalOpen = false;
+  if (spaceOnboarding.open) spaceOnboarding.close();
+  await loadItems();
+  renderAll();
+}
+
+async function refreshSpace() {
+  if (!state.spaceId || !state.memberId) {
+    openSpaceOnboarding(readInviteFromUrl());
+    return;
+  }
+  try {
+    const result = await fetchSpace();
+    saveSpaceSession(result.space, result.member);
+    state.members = Array.isArray(result.members) ? result.members : [];
+    renderSpace();
+  } catch (error) {
+    if (error?.message === 'unauthorized') return;
+    // Alan silinmiş ya da üyelik düşmüş: baştan başlat.
+    clearSpaceSession();
+    openSpaceOnboarding(readInviteFromUrl());
+  }
+}
+
+function readInviteFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return (params.get('davet') || '').trim().toUpperCase();
+}
+
+function setupSpaceEvents() {
+  document.querySelectorAll('[data-space-tab]').forEach((button) => {
+    button.addEventListener('click', () => switchSpaceTab(button.dataset.spaceTab));
+  });
+
+  document.getElementById('createSpaceForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      const result = await createSpace(
+        document.getElementById('newSpaceName').value,
+        document.getElementById('newSpaceMemberName').value
+      );
+      await adoptSpaceResult(result);
+      showToast('Alanın hazır. Hadi başlayalım!');
+    } catch (error) {
+      showToast(error?.message || 'Bir şeyler ters gitti.');
+    }
+  });
+
+  document.getElementById('joinSpaceForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const errorBox = document.getElementById('joinSpaceError');
+    errorBox.hidden = true;
+    try {
+      const result = await joinSpace(
+        document.getElementById('joinSpaceCode').value,
+        document.getElementById('joinSpaceMemberName').value
+      );
+      await adoptSpaceResult(result);
+      showToast('Katıldın!');
+    } catch (error) {
+      errorBox.textContent = error?.message || 'Bu davet kodu geçerli değil.';
+      errorBox.hidden = false;
+    }
+  });
+
+  document.getElementById('spaceButton').addEventListener('click', () => {
+    renderSpace();
+    state.isModalOpen = true;
+    spaceDialog.showModal();
+  });
+
+  document.getElementById('closeSpaceDialog').addEventListener('click', () => {
+    state.isModalOpen = false;
+    spaceDialog.close();
+  });
+
+  document.getElementById('spaceNameForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      const result = await renameSpace(document.getElementById('spaceNameInput').value);
+      state.space = result.space;
+      renderSpace();
+      showToast('Alan adı güncellendi.');
+    } catch (error) {
+      showToast(error?.message || 'Alan adı kaydedilemedi.');
+    }
+  });
+
+  document.getElementById('copyInviteButton').addEventListener('click', async () => {
+    const link = `${window.location.origin}${window.location.pathname}?davet=${state.space?.invite_code || ''}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast('Davet bağlantısı kopyalandı.');
+    } catch {
+      showToast(link);
+    }
+  });
+
+  document.getElementById('memberList').addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-remove-member]');
+    if (!button) return;
+    try {
+      await removeSpaceMember(button.dataset.removeMember);
+      await refreshSpace();
+      showToast('Üye çıkarıldı.');
+    } catch (error) {
+      showToast(error?.message || 'Üye çıkarılamadı.');
+    }
+  });
+
+  document.getElementById('leaveSpaceButton').addEventListener('click', async () => {
+    if (!window.confirm('Bu alandan ayrılmak istediğine emin misin?')) return;
+    try {
+      await removeSpaceMember(state.memberId);
+      clearSpaceSession();
+      state.items = [];
+      state.isModalOpen = false;
+      spaceDialog.close();
+      renderAll();
+      openSpaceOnboarding();
+      showToast('Alandan ayrıldın.');
+    } catch (error) {
+      showToast(error?.message || 'Alandan ayrılamadın.');
+    }
+  });
+}
+
+async function handleSheetImport(event) {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file) return;
+
+  state.isMutating = true;
+  showToast('Liste okunuyor...');
+  try {
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',').pop());
+      reader.onerror = () => reject(new Error('Dosya okunamadı.'));
+      reader.readAsDataURL(file);
+    });
+
+    const result = await importSheet(file.name, base64);
+    await loadItems();
+    renderAll();
+
+    if (result.added === 0) {
+      showToast('Hepsi zaten listede.');
+    } else {
+      const skipped = result.duplicates ? `, ${result.duplicates} tanesi zaten vardı` : '';
+      showToast(`${result.added} kayıt eklendi${skipped}.`);
+    }
+  } catch (error) {
+    showToast(error?.message || 'Dosya aktarılamadı.');
+  } finally {
+    state.isMutating = false;
+  }
+}
+
 function startPolling() {
   setInterval(async () => {
     const now = Date.now();
     const isUserActive = now - state.lastInteractionTs < 1000;
     if (isUserActive || state.isModalOpen || state.isMutating || state.isPhotoAnalyzing) return;
+    if (!state.spaceId) return;
     try {
       await loadItems({ silent: true });
     } catch {
@@ -394,7 +620,9 @@ function startPolling() {
 async function boot() {
   renderAll();
   setupEvents();
-  await loadItems();
+  setupSpaceEvents();
+  await refreshSpace();
+  if (state.spaceId) await loadItems();
   startPolling();
   const bilgePanel = document.querySelector('.bilge-panel');
   if (bilgePanel) {

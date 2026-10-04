@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hommie</title>
+    <meta name="description" content="Hommie - ev planlama ve tamamlama listesi" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&family=Special+Elite:wght@400&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header id="hero" class="hero" aria-live="polite"></header>
+
+      <section class="toolbar" aria-label="Filtreleme ve sıralama">
+        <div class="toolbar-header">
+          <div class="toolbar-title">🦒 Zürafa bakıyor</div>
+          <div class="toolbar-meta">Durum, oda ve öncelik</div>
+        </div>
+        <div id="roomFilters" class="room-filters" aria-label="Oda filtresi"></div>
+        <div class="toolbar-row">
+          <label class="field compact">
+            <span>Durum</span>
+            <select id="statusFilter">
+              <option value="Tümü">Tümü</option>
+              <option value="Yapılmadı">Yapılmadı</option>
+              <option value="Araştırılıyor">Araştırılıyor</option>
+              <option value="Sipariş verildi">Sipariş verildi</option>
+              <option value="Tamam">Tamam</option>
+            </select>
+          </label>
+
+          <label class="field compact">
+            <span>Öncelik</span>
+            <select id="priorityFilter">
+              <option value="Tümü">Tümü</option>
+              <option value="1">1 - Acil</option>
+              <option value="2">2 - Önemli</option>
+              <option value="3">3 - Sonra</option>
+            </select>
+          </label>
+
+          <label class="field compact">
+            <span>Sıralama</span>
+            <select id="sortFilter">
+              <option value="priority">Öncelik</option>
+              <option value="newest">En yeni</option>
+              <option value="oldest">En eski</option>
+              <option value="completed">Tamamlanma durumu</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="actions-bar">
+        <button id="bulkPriceButton" class="primary-button">Fiyatı olmayanları tahmin et</button>
+        <button id="photoTabButton" class="secondary-button">Foto analizi</button>
+        <button id="addItemButton" class="secondary-button">Yeni öğe</button>
+      </section>
+
+      <section id="progressStats" class="progress-panel" aria-live="polite"></section>
+
+      <main>
+        <section id="photoPanel" class="photo-panel" hidden>
+          <div class="panel-head">
+            <h2>Foto analizi</h2>
+          </div>
+          <div class="photo-controls">
+            <label class="field">
+              <span>Oda</span>
+              <select id="photoRoom">
+                <option value="Genel">Genel</option>
+                <option value="Salon">Salon</option>
+                <option value="Mutfak">Mutfak</option>
+                <option value="Yatak Odası">Yatak Odası</option>
+                <option value="Banyo">Banyo</option>
+                <option value="Balkon">Balkon</option>
+                <option value="Antre">Antre</option>
+              </select>
+            </label>
+            <label class="field upload-field">
+              <span>Fotoğraflar</span>
+              <input id="photoInput" type="file" accept="image/*" multiple />
+            </label>
+            <button id="photoAnalyzeButton" class="primary-button">Analiz et</button>
+          </div>
+          <div id="photoSuggestions" class="suggestions-list"></div>
+          <button id="addSuggestedButton" class="secondary-button" hidden>Seçilenleri ekle</button>
+        </section>
+
+        <section id="cardList" class="card-list" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <dialog id="itemModal" class="modal">
+      <form id="itemForm" method="dialog">
+        <div class="modal-header">
+          <h2 id="modalTitle">Yeni öğe</h2>
+          <button type="button" class="close-button" data-close-modal="itemModal" aria-label="Kapat">×</button>
+        </div>
+
+        <div class="form-grid">
+          <label class="field">
+            <span>Ad</span>
+            <input name="name" required />
+          </label>
+
+          <label class="field">
+            <span>Oda</span>
+            <select name="room">
+              <option value="Genel">Genel</option>
+              <option value="Salon">Salon</option>
+              <option value="Mutfak">Mutfak</option>
+              <option value="Yatak Odası">Yatak Odası</option>
+              <option value="Banyo">Banyo</option>
+              <option value="Balkon">Balkon</option>
+              <option value="Antre">Antre</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Tür</span>
+            <select name="type">
+              <option value="Alınacak">Alınacak</option>
+              <option value="Yapılacak">Yapılacak</option>
+              <option value="Tamir">Tamir</option>
+              <option value="Resmi iş">Resmi iş</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Öncelik</span>
+            <select name="priority">
+              <option value="1">1 - Acil</option>
+              <option value="2">2 - Önemli</option>
+              <option value="3">3 - Sonra</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Durum</span>
+            <select name="status">
+              <option value="Yapılmadı">Yapılmadı</option>
+              <option value="Araştırılıyor">Araştırılıyor</option>
+              <option value="Sipariş verildi">Sipariş verildi</option>
+              <option value="Tamam">Tamam</option>
+            </select>
+          </label>
+
+          <label class="field wide">
+            <span>Not</span>
+            <textarea name="note" rows="4"></textarea>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="primary-button">Kaydet</button>
+          <button type="button" class="secondary-button" data-close-modal="itemModal">İptal</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="passwordDialog" class="modal password-modal">
+      <form id="passwordForm" method="dialog">
+        <div class="password-layout">
+          <div class="bilge-panel"></div>
+          <div class="password-copy">
+            <h2>Hommie'ye hoş geldin!</h2>
+            <p>Bu evin listesi biraz özel. Şifreyi gir bakalım.</p>
+            <label class="field">
+              <span>Şifre</span>
+              <input id="passwordInput" type="password" autocomplete="current-password" required />
+            </label>
+            <div id="passwordError" class="error-text" hidden>Şifre yanlış. Tekrar deneyin.</div>
+            <div class="modal-actions">
+              <button type="submit" class="primary-button">Giriş</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

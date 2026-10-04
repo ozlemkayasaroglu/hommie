@@ -1,0 +1,17 @@
+{
+  "name": "hommie",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.1",
+    "vercel": "^39.1.0",
+    "vitest": "^2.1.8"
+  }
+}

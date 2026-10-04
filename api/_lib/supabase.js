@@ -1,11 +1,16 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
-const dataDir = path.join(repoRoot, '.data');
+// Vercel's serverless filesystem is read-only outside /tmp, so the repo-local
+// .data dir (used for local dev) isn't writable in that environment.
+const dataDir = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'hommie-data')
+  : path.join(repoRoot, '.data');
 const itemsFile = path.join(dataDir, 'items.json');
 
 export const defaultSeedItems = [

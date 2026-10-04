@@ -3,7 +3,6 @@ import {
   createItem,
   updateItem,
   deleteItem,
-  bulkEstimatePrice,
   analyzePhoto,
   requestImageLookup,
   uploadUserImage
@@ -171,56 +170,6 @@ async function handleNoteChange(id, value) {
   }
 }
 
-async function handlePriceEstimate(id) {
-  const item = state.items.find((entry) => entry.id === id);
-  if (!item || item.type === 'Resmi iş') return;
-
-  try {
-    state.isMutating = true;
-    const result = await bulkEstimatePrice([id]);
-    if (result?.items && result.items.length) {
-      await loadItems();
-      showToast('Fiyat tahmini oluşturuldu.');
-    }
-  } catch (error) {
-    if (error?.message === 'rate_limited') {
-      showToast('Bir dakika sonra tekrar dene.');
-      return;
-    }
-    showToast('Fiyat tahmini alınamadı.');
-  } finally {
-    state.isMutating = false;
-  }
-}
-
-async function handleBulkPrice() {
-  const ids = state.items
-    .filter((item) => item.type !== 'Resmi iş' && !(item.price && typeof item.price === 'object'))
-    .map((item) => item.id);
-
-  if (!ids.length) {
-    showToast('Tahmin edilecek fiyat yok.');
-    return;
-  }
-
-  try {
-    state.isMutating = true;
-    const result = await bulkEstimatePrice(ids);
-    if (result?.items) {
-      await loadItems();
-      showToast('Fiyat tahminleri güncellendi.');
-    }
-  } catch (error) {
-    if (error?.message === 'rate_limited') {
-      showToast('Bir dakika sonra tekrar dene.');
-      return;
-    }
-    showToast('Toplu fiyat tahmini başarısız oldu.');
-  } finally {
-    state.isMutating = false;
-  }
-}
-
 function attachPhotoSelectionHandlers() {
   const checks = document.querySelectorAll('[data-photo-check]');
   checks.forEach((input) => {
@@ -331,7 +280,6 @@ function setupEvents() {
     });
   });
 
-  document.getElementById('bulkPriceButton').addEventListener('click', handleBulkPrice);
   document.getElementById('photoTabButton').addEventListener('click', () => {
     state.activeView = state.activeView === 'photo' ? 'list' : 'photo';
     renderPhotoPanel();
@@ -394,10 +342,6 @@ function setupEvents() {
     if (action === 'edit') {
       const item = state.items.find((entry) => entry.id === id);
       if (item) openItemModal(item);
-    }
-
-    if (action === 'estimate') {
-      await handlePriceEstimate(id);
     }
   });
 

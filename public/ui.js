@@ -173,34 +173,6 @@ export function renderFilters() {
   sortEl.value = state.sort;
 }
 
-function renderPriceBlock(item) {
-  if (
-    !item ||
-    item.type === "Resmi iş" ||
-    !item.price ||
-    typeof item.price !== "object"
-  )
-    return "";
-  return `
-    <div class="price-box">
-      <strong>Fiyat tahmini:</strong>
-      <span>${escapeHtml(item.price.range || "")}</span>
-      <small>${escapeHtml(item.price.tip || "Bu bir AI tahminidir. Güncel fiyat için mağazalara bak.")}</small>
-    </div>
-  `;
-}
-
-function renderButtons(item) {
-  if (!item || item.type === "Resmi iş") return "";
-
-  const priceLabel = item.price ? "Fiyat güncelle" : "Fiyat tahmini";
-  return `
-    <div class="shopping-row">
-      <button class="mini-btn" data-action="estimate" data-id="${item.id}">${priceLabel}</button>
-    </div>
-  `;
-}
-
 function renderNoteField(item) {
   return `
     <label class="note-field">
@@ -273,8 +245,6 @@ export function renderCards() {
           <span>Durum: <strong>${escapeHtml(item.status)}</strong></span>
         </div>
 
-        ${renderPriceBlock(item)}
-        ${renderButtons(item)}
         ${renderNoteField(item)}
 
         <div class="card-actions">

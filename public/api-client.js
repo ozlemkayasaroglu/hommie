@@ -47,13 +47,6 @@ export async function deleteItem(id) {
   return apiFetch(`/api/items?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
-export async function bulkEstimatePrice(ids) {
-  return apiFetch('/api/ai', {
-    method: 'POST',
-    body: JSON.stringify({ task: 'price', ids })
-  });
-}
-
 export async function analyzePhoto(room, existingNames, images) {
   return apiFetch('/api/ai', {
     method: 'POST',

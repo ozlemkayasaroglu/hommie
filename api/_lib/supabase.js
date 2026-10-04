@@ -4,8 +4,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, '..', '..');
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(moduleDir, '..', '..');
 // Serverless filesystems (Vercel, Netlify, Lambda) are read-only outside
 // /tmp, so the repo-local .data dir (used for local dev) isn't writable there.
 const isServerless = Boolean(

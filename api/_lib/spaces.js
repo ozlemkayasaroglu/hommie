@@ -142,6 +142,13 @@ export async function removeMember(spaceId, memberId) {
   return true;
 }
 
+export async function deleteSpace(spaceId) {
+  const store = await readStore();
+  store.spaces = store.spaces.filter((space) => space.id !== spaceId);
+  store.members = store.members.filter((member) => member.space_id !== spaceId);
+  await writeStore(store);
+}
+
 export async function hasAnySpace() {
   const store = await readStore();
   return store.spaces.length > 0;

@@ -1,6 +1,7 @@
 import { isPasswordAllowed } from './_lib/auth.js';
 import {
   createSpace,
+  deleteSpace,
   joinSpace,
   getSpace,
   getMember,
@@ -142,6 +143,18 @@ export default async function handler(req, res) {
       }
 
       await removeMember(context.space.id, targetId);
+
+      // Son üye de ayrıldıysa alan ve içeriği kalıcı olarak gitsin; aksi halde
+      // davet kodu sahipsiz bir alana erişim vermeye devam ederdi.
+      const remaining = await listMembers(context.space.id);
+      if (remaining.length === 0) {
+        const items = await readItems();
+        const kept = items.filter((item) => item.space_id !== context.space.id);
+        if (kept.length !== items.length) await writeItems(kept);
+        await deleteSpace(context.space.id);
+        return res.status(200).json({ ok: true, left: isSelf, spaceDeleted: true });
+      }
+
       return res.status(200).json({ ok: true, left: isSelf });
     }
 

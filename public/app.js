@@ -9,6 +9,8 @@ import {
   importSheet,
   createSpace,
   joinSpace,
+  recoverSpace,
+  rotateInvite,
   fetchSpace,
   renameSpace,
   removeSpaceMember
@@ -517,6 +519,43 @@ function setupSpaceEvents() {
     }
   });
 
+  document.getElementById('recoverSpaceForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const errorBox = document.getElementById('recoverError');
+    errorBox.hidden = true;
+    try {
+      const result = await recoverSpace(document.getElementById('recoverCode').value);
+      await adoptSpaceResult(result);
+      showToast('Tekrar hoş geldin!');
+    } catch (error) {
+      errorBox.textContent = error?.message || 'Bu kurtarma kodu geçerli değil.';
+      errorBox.hidden = false;
+    }
+  });
+
+  document.getElementById('rotateInviteButton').addEventListener('click', async () => {
+    if (!window.confirm('Eski davet kodu geçersiz olacak. Yeni kod üretilsin mi?')) return;
+    try {
+      const result = await rotateInvite();
+      state.space = result.space;
+      renderSpace();
+      showToast('Yeni davet kodu hazır.');
+    } catch (error) {
+      showToast(error?.message || 'Kod yenilenemedi.');
+    }
+  });
+
+  document.getElementById('copyRecoveryButton').addEventListener('click', async () => {
+    const code = state.member?.recovery_code || '';
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      showToast('Kurtarma kodun kopyalandı.');
+    } catch {
+      showToast(code);
+    }
+  });
+
   document.getElementById('joinSpaceForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const errorBox = document.getElementById('joinSpaceError');
@@ -580,17 +619,39 @@ function setupSpaceEvents() {
   });
 
   document.getElementById('leaveSpaceButton').addEventListener('click', async () => {
-    if (!window.confirm('Bu alandan ayrılmak istediğine emin misin?')) return;
+    const isLastMember = state.members.length <= 1;
+    let confirmName = '';
+
+    if (isLastMember) {
+      // Son üye ayrılırsa liste de kapanıyor; adı yazdırarak teyit alıyoruz.
+      const answer = window.prompt(
+        `Bu alandan ayrılırsan liste kapanır ve kayıtlar ${30} gün saklandıktan sonra silinir.\nDevam etmek için alanın adını yaz: ${state.space?.name || ''}`,
+        ''
+      );
+      if (answer === null) return;
+      confirmName = answer.trim();
+    } else if (!window.confirm('Bu alandan ayrılmak istediğine emin misin?')) {
+      return;
+    }
+
     try {
-      await removeSpaceMember(state.memberId);
+      const result = await removeSpaceMember(state.memberId, confirmName);
       clearSpaceSession();
       state.items = [];
       state.isModalOpen = false;
       spaceDialog.close();
       renderAll();
       openSpaceOnboarding();
-      showToast('Alandan ayrıldın.');
+      showToast(
+        result?.spaceClosed
+          ? `Alan kapatıldı. Kayıtlar ${result.retentionDays} gün saklanıyor.`
+          : 'Alandan ayrıldın.'
+      );
     } catch (error) {
+      if (error?.message === 'confirm_required') {
+        showToast('Alan adını doğru yazman gerekiyor.');
+        return;
+      }
       showToast(error?.message || 'Alandan ayrılamadın.');
     }
   });

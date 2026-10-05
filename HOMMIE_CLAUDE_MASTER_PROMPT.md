@@ -118,15 +118,28 @@ Varsayılan sıralama **En yeni**'dir, yani yeni eklenen kayıt listenin en üst
 
 ## ALANLAR, ÜYELER, DAVET
 
-Alan bilgisi hero'nun hemen altında kendi şeridinde durur: "BURASI" etiketi, alan adı, üye rozetleri (baş harf avatarı + isim, kendin "(sen)" ile işaretli), "Birini davet et" rozeti ve ayarlar düğmesi. Altında kaç kişi olduğunuza göre değişen bir cümle bulunur — tek kişiyken davet etmeye çağırır, iki kişiyken listeyi birlikte topladığınızı söyler.
+Hesap yok. Kimlik, tarayıcıda saklanan `spaceId` + `memberId` ikilisidir ve her istekte `x-space-id` / `x-member-id` başlıklarıyla gider. Sunucu bu ikiliyi `members` tablosunda doğrular.
 
-Avatar rengi üye kimliğinden türetilir, böylece her üye kendi sabit rengini alır.
+Alan bilgisi hero'nun hemen altında kendi şeridinde durur: "BURASI" etiketi, alan adı, üye rozetleri (baş harf avatarı + isim, kendin "(sen)" ile işaretli), "Birini davet et" rozeti ve ayarlar düğmesi. Altında kaç kişi olduğunuza göre değişen bir cümle bulunur — tek kişiyken davet etmeye çağırır, iki kişiyken listeyi birlikte topladığınızı söyler. Avatar rengi üye kimliğinden türetilir, böylece her üye kendi sabit rengini alır.
+
+### Davet
 
 - Alan, onboarding penceresinden kurulur ve 6 karakterlik bir davet kodu alır.
 - `?davet=KOD` bağlantısı "Davet koduyla katıl" sekmesini açıp kodu doldurur.
-- Öğeler `x-space-id` / `x-member-id` başlıklarıyla alana bağlıdır.
-- Alanı yalnızca kuran kişi yeniden adlandırabilir ve üye çıkarabilir.
-- Son üye de ayrıldığında alan ve içindeki kayıtlar silinir.
+- Alanı kuran kişi ayarlardan **"Kodu yenile"** diyerek yeni kod üretebilir; eski kod o anda geçersiz olur.
+
+### Kurtarma anahtarı
+
+Her üyeye kendine özel bir kurtarma kodu verilir (`ABCDE-12345` biçiminde). Cihaz değişince ya da tarayıcı verisi silinince onboarding'deki "Kurtarma kodu" sekmesinden girilir ve kişi **aynı üye olarak** geri döner; kopya üye satırı oluşmaz.
+
+Kurtarma kodu yalnızca sahibine gösterilir — üye listesinde ve diğer üyelere dönen yanıtlarda yer almaz.
+
+### Erişim ve silme
+
+- Öğeler `space_id` ile alana bağlıdır; başka alandan görülemez, düzenlenemez.
+- Alanı yalnızca kuran kişi yeniden adlandırabilir, üye çıkarabilir ve davet kodunu yenileyebilir.
+- Son üye ayrılırken **alan adını yazarak onaylaması** istenir.
+- Onay verilirse alan kapanır ama veri hemen silinmez: `deleted_at` işaretlenir, kayıtlar 30 gün saklanır ve süre dolunca veritabanı tarafında temizlenir. Kapalı alana davet ya da kurtarma koduyla girilemez.
 
 ## YAPAY ZEKA — ŞİMDİLİK KAPALI
 

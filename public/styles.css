@@ -1445,3 +1445,33 @@ a:focus-visible {
     font-size: 0.72rem;
   }
 }
+
+#recoverCode {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+}
+
+.recovery-box {
+  border-style: solid;
+  border-color: rgba(27, 26, 58, 0.15);
+  background: var(--light);
+}
+
+.recovery-hint {
+  flex: 1 1 100%;
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.space-tabs {
+  flex-wrap: wrap;
+}
+
+.space-tab {
+  flex: 1 1 auto;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  padding: 0 10px;
+}

@@ -1,17 +1,21 @@
 import { isPasswordAllowed } from './_lib/auth.js';
 import {
   createSpace,
-  deleteSpace,
   joinSpace,
   getSpace,
   getMember,
   listMembers,
   renameSpace,
   removeMember,
+  recoverMember,
+  rotateInviteCode,
+  softDeleteSpace,
   publicSpace,
-  publicMember
+  publicMember,
+  ownMember,
+  SOFT_DELETE_DAYS
 } from './_lib/spaces.js';
-import { adoptOrphanItems, deleteItemsBySpace } from './_lib/items-store.js';
+import { adoptOrphanItems } from './_lib/items-store.js';
 
 async function readBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
@@ -68,7 +72,7 @@ export default async function handler(req, res) {
         return res.status(201).json({
           ok: true,
           space: publicSpace(created.space),
-          member: publicMember(created.member),
+          member: ownMember(created.member),
           members: (await listMembers(created.space.id)).map(publicMember)
         });
       }
@@ -81,8 +85,21 @@ export default async function handler(req, res) {
         return res.status(200).json({
           ok: true,
           space: publicSpace(joined.space),
-          member: publicMember(joined.member),
+          member: ownMember(joined.member),
           members: (await listMembers(joined.space.id)).map(publicMember)
+        });
+      }
+
+      if (action === 'recover') {
+        const recovered = await recoverMember(body.code);
+        if (!recovered) {
+          return res.status(404).json({ ok: false, error: 'Bu kurtarma kodu geçerli değil.' });
+        }
+        return res.status(200).json({
+          ok: true,
+          space: publicSpace(recovered.space),
+          member: ownMember(recovered.member),
+          members: (await listMembers(recovered.space.id)).map(publicMember)
         });
       }
 
@@ -98,16 +115,25 @@ export default async function handler(req, res) {
       return res.status(200).json({
         ok: true,
         space: publicSpace(context.space),
-        member: publicMember(context.member),
+        member: ownMember(context.member),
         members: (await listMembers(context.space.id)).map(publicMember)
       });
     }
 
     if (req.method === 'PATCH') {
+      const body = await readBody(req);
+
+      if (body.action === 'rotate-invite') {
+        if (context.member.role !== 'sahip') {
+          return res.status(403).json({ ok: false, error: 'Davet kodunu yalnızca alanı kuran kişi yenileyebilir.' });
+        }
+        const rotated = await rotateInviteCode(context.space.id);
+        return res.status(200).json({ ok: true, space: publicSpace(rotated) });
+      }
+
       if (context.member.role !== 'sahip') {
         return res.status(403).json({ ok: false, error: 'Alanı yalnızca kuran kişi yeniden adlandırabilir.' });
       }
-      const body = await readBody(req);
       const updated = await renameSpace(context.space.id, body.name);
       return res.status(200).json({ ok: true, space: publicSpace(updated) });
     }
@@ -131,15 +157,34 @@ export default async function handler(req, res) {
         });
       }
 
+      // Son üye ayrılıyorsa liste de kapanacağı için alan adının yazılarak
+      // onaylanmasını istiyoruz; tek tıkla her şey silinmesin.
+      const isLastMember = isSelf && members.length === 1;
+      if (isLastMember) {
+        const confirmName = String(req.query?.confirmName || '').trim();
+        if (confirmName.toLocaleLowerCase('tr-TR') !== context.space.name.toLocaleLowerCase('tr-TR')) {
+          return res.status(400).json({
+            ok: false,
+            error: 'confirm_required',
+            spaceName: context.space.name,
+            message: 'Alandan ayrılmak için alan adını yaz.'
+          });
+        }
+      }
+
       await removeMember(context.space.id, targetId);
 
-      // Son üye de ayrıldıysa alan ve içeriği kalıcı olarak gitsin; aksi halde
-      // davet kodu sahipsiz bir alana erişim vermeye devam ederdi.
+      // Son üye de ayrıldıysa alan kapanır; veri hemen silinmez, saklama
+      // süresi dolunca veritabanı tarafında temizlenir.
       const remaining = await listMembers(context.space.id);
       if (remaining.length === 0) {
-        await deleteItemsBySpace(context.space.id);
-        await deleteSpace(context.space.id);
-        return res.status(200).json({ ok: true, left: isSelf, spaceDeleted: true });
+        await softDeleteSpace(context.space.id);
+        return res.status(200).json({
+          ok: true,
+          left: isSelf,
+          spaceClosed: true,
+          retentionDays: SOFT_DELETE_DAYS
+        });
       }
 
       return res.status(200).json({ ok: true, left: isSelf });

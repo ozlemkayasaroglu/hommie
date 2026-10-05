@@ -419,6 +419,12 @@ export function renderSpace() {
   const code = document.getElementById("inviteCode");
   if (code) code.textContent = state.space.invite_code;
 
+  const recovery = document.getElementById("recoveryCode");
+  if (recovery) recovery.textContent = state.member?.recovery_code || "—";
+
+  const rotate = document.getElementById("rotateInviteButton");
+  if (rotate) rotate.hidden = !isSpaceOwner();
+
   const list = document.getElementById("memberList");
   if (list) {
     list.innerHTML = state.members

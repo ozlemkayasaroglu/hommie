@@ -317,6 +317,9 @@
           <button type="button" class="space-tab" data-space-tab="join">
             Davet koduyla katıl
           </button>
+          <button type="button" class="space-tab" data-space-tab="recover">
+            Kurtarma kodu
+          </button>
         </div>
 
         <form id="createSpaceForm" class="space-form" data-space-panel="create">
@@ -356,6 +359,30 @@
             <button type="submit" class="primary-button">Katıl</button>
           </div>
         </form>
+
+        <form id="recoverSpaceForm" class="space-form" data-space-panel="recover" hidden>
+          <p class="panel-hint">
+            Cihazını mı değiştirdin, tarayıcı verilerin mi silindi? Kurtarma
+            kodunla aynı kişi olarak geri dön.
+          </p>
+          <label class="field">
+            <span>Kurtarma kodu</span>
+            <input
+              id="recoverCode"
+              type="text"
+              maxlength="12"
+              placeholder="ABCDE-12345"
+              autocapitalize="characters"
+              required
+            />
+          </label>
+          <div id="recoverError" class="error-text" hidden>
+            Bu kurtarma kodu geçerli değil.
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="primary-button">Geri dön</button>
+          </div>
+        </form>
       </div>
     </dialog>
 
@@ -389,6 +416,22 @@
           <button type="button" id="copyInviteButton" class="secondary-button">
             Davet bağlantısını kopyala
           </button>
+          <button type="button" id="rotateInviteButton" class="secondary-action">
+            Kodu yenile
+          </button>
+        </div>
+
+        <div class="invite-box recovery-box">
+          <span class="invite-label">Kurtarma kodun</span>
+          <strong id="recoveryCode" class="invite-code"></strong>
+          <button type="button" id="copyRecoveryButton" class="secondary-button">
+            Kopyala
+          </button>
+          <p class="panel-hint recovery-hint">
+            Bu kod yalnızca sana ait. Telefonunu değiştirdiğinde ya da tarayıcı
+            verilerin silindiğinde bu kodla aynı kişi olarak geri dönersin —
+            kimseyle paylaşma.
+          </p>
         </div>
 
         <div class="members-box">

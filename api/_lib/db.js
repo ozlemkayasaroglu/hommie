@@ -65,10 +65,16 @@ export function ensureSchema() {
         created_at timestamptz NOT NULL DEFAULT now()
       )
     `;
+    // Sonradan eklenen sütunlar: kurtarma anahtarı ve yumuşak silme.
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS recovery_code text`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS members_recovery_idx ON members(recovery_code)`;
+    await sql`ALTER TABLE spaces ADD COLUMN IF NOT EXISTS deleted_at timestamptz`;
+
     await sql`CREATE INDEX IF NOT EXISTS items_space_idx ON items(space_id)`;
     await sql`CREATE INDEX IF NOT EXISTS members_space_idx ON members(space_id)`;
     await migrateFromBlobs(sql);
     await migrateStatuses(sql);
+    await purgeExpiredSpaces(sql);
   })().catch((error) => {
     // Sonraki istek yeniden denesin.
     schemaPromise = null;
@@ -132,6 +138,21 @@ async function migrateStatuses(sql) {
     await sql`UPDATE items SET status = 'Tamamlandı' WHERE status = 'Tamam'`;
   } catch (error) {
     console.error('[db] status migration failed', error?.message);
+  }
+}
+
+// Yumuşak silinen alanlar saklama süresi dolunca gerçekten silinir.
+export const SOFT_DELETE_DAYS = 30;
+
+async function purgeExpiredSpaces(sql) {
+  try {
+    await sql`
+      DELETE FROM spaces
+      WHERE deleted_at IS NOT NULL
+        AND deleted_at < now() - (${SOFT_DELETE_DAYS} || ' days')::interval
+    `;
+  } catch (error) {
+    console.error('[db] purge failed', error?.message);
   }
 }
 

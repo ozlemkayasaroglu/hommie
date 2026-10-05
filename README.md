@@ -63,10 +63,13 @@ Then open http://localhost:3000. `server.js` serves `public/` and routes `/api/*
 
 ## 7. Spaces, members and invites
 
-- A space is created from the onboarding dialog and gets a 6-character invite code.
-- Sharing `?davet=CODE` opens the join tab with the code pre-filled.
-- Items are scoped to a space through the `x-space-id` / `x-member-id` headers.
-- Only the space owner can rename the space or remove members.
+There are no accounts. Identity is the `spaceId` + `memberId` pair kept in the browser and sent as `x-space-id` / `x-member-id`; the server validates it against the `members` table.
+
+- A space is created from the onboarding dialog and gets a 6-character invite code. `?davet=CODE` opens the join tab with the code pre-filled.
+- The owner can rotate the invite code, which invalidates the old one immediately.
+- Every member also gets a personal recovery code (`ABCDE-12345`). Entering it on the "Kurtarma kodu" tab restores the same member row on a new device, so changing phones or clearing browser data does not create a duplicate member or lose access. It is returned only to its own owner, never in the member list.
+- Only the owner can rename the space, remove members or rotate the code.
+- When the last member leaves they must type the space name to confirm. The space is then soft-deleted: `deleted_at` is set, rows are kept for 30 days and purged afterwards. A closed space accepts neither invite nor recovery codes.
 
 ## 8. Excel import
 

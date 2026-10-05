@@ -99,6 +99,20 @@ export async function joinSpace(code, memberName) {
   });
 }
 
+export async function recoverSpace(code) {
+  return apiFetch('/api/spaces', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'recover', code })
+  });
+}
+
+export async function rotateInvite() {
+  return apiFetch('/api/spaces', {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'rotate-invite' })
+  });
+}
+
 export async function fetchSpace() {
   return apiFetch('/api/spaces', { method: 'GET' });
 }
@@ -110,10 +124,11 @@ export async function renameSpace(name) {
   });
 }
 
-export async function removeSpaceMember(memberId) {
-  return apiFetch(`/api/spaces?memberId=${encodeURIComponent(memberId)}`, {
-    method: 'DELETE'
-  });
+export async function removeSpaceMember(memberId, confirmName) {
+  const query = confirmName
+    ? `?memberId=${encodeURIComponent(memberId)}&confirmName=${encodeURIComponent(confirmName)}`
+    : `?memberId=${encodeURIComponent(memberId)}`;
+  return apiFetch(`/api/spaces${query}`, { method: 'DELETE' });
 }
 
 export async function importSheet(fileName, base64) {

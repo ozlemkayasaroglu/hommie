@@ -3,7 +3,8 @@ export const state = {
   activeRoom: 'Genel',
   statusFilter: 'Tümü',
   priorityFilter: 'Tümü',
-  sort: 'priority',
+  sort: 'newest',
+  activeTab: 'open',
   password: localStorage.getItem('hommie-app-password') || '',
   spaceId: localStorage.getItem('hommie-space-id') || '',
   memberId: localStorage.getItem('hommie-member-id') || '',
@@ -23,11 +24,31 @@ export const state = {
   lastInteractionTs: Date.now()
 };
 
+export function isDone(item) {
+  return item?.status === 'Tamam';
+}
+
+export function getTabCounts() {
+  const scoped = state.items.filter(
+    (item) => state.activeRoom === 'Genel' || item.room === state.activeRoom
+  );
+  return {
+    open: scoped.filter((item) => !isDone(item)).length,
+    done: scoped.filter(isDone).length,
+    all: scoped.length
+  };
+}
+
 export function getVisibleItems() {
   const room = state.activeRoom;
   const items = [...state.items];
   return items
     .filter((item) => room === 'Genel' || item.room === room)
+    .filter((item) => {
+      if (state.activeTab === 'open') return !isDone(item);
+      if (state.activeTab === 'done') return isDone(item);
+      return true;
+    })
     .filter((item) => state.statusFilter === 'Tümü' || item.status === state.statusFilter)
     .filter((item) => state.priorityFilter === 'Tümü' || Number(item.priority) === Number(state.priorityFilter))
     .sort((a, b) => {

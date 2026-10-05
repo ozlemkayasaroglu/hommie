@@ -25,6 +25,18 @@
           <div class="toolbar-title"><span class="toolbar-logo">🦒</span></div>
           <div class="toolbar-meta">Durum, oda ve öncelik</div>
         </div>
+        <div id="statusTabs" class="status-tabs" role="tablist" aria-label="Liste sekmeleri">
+          <button type="button" class="status-tab active" data-tab="open">
+            Devam edenler <span class="tab-count" data-count="open">0</span>
+          </button>
+          <button type="button" class="status-tab" data-tab="done">
+            Bitenler <span class="tab-count" data-count="done">0</span>
+          </button>
+          <button type="button" class="status-tab" data-tab="all">
+            Tümü <span class="tab-count" data-count="all">0</span>
+          </button>
+        </div>
+
         <div
           id="roomFilters"
           class="room-filters"
@@ -64,8 +76,8 @@
               ><span class="field-icon">↕</span> Sıralama</span
             >
             <select id="sortFilter">
-              <option value="priority">Öncelik</option>
               <option value="newest">En yeni</option>
+              <option value="priority">Öncelik</option>
               <option value="oldest">En eski</option>
               <option value="completed">Tamamlanma durumu</option>
             </select>
@@ -81,7 +93,8 @@
       </section>
 
       <section class="actions-bar">
-        <button id="photoTabButton" class="secondary-button">
+        <!-- Foto analizi şimdilik kapalı; kod ve uç noktalar duruyor. -->
+        <button id="photoTabButton" class="secondary-button" hidden>
           Foto analizi
         </button>
         <button id="addItemButton" class="secondary-button">Yeni öğe</button>

@@ -18,6 +18,7 @@ import {
   renderHero,
   renderRoomFilters,
   renderFilters,
+  renderTabs,
   renderCards,
   renderPhotoPanel,
   renderPhotoSuggestions,
@@ -39,6 +40,7 @@ let editingItemId = null;
 function renderAll() {
   renderHero();
   renderRoomFilters();
+  renderTabs();
   renderFilters();
   renderCards();
   renderPhotoPanel();
@@ -130,6 +132,9 @@ async function createOrUpdateItem(event) {
       showToast('Öğe güncellendi.');
     } else {
       await createItem(payload);
+      // Yeni kayıt en üstte ve görünür sekmede olsun.
+      state.sort = 'newest';
+      if (state.activeTab === 'done') state.activeTab = 'open';
       showToast('Öğe eklendi.');
     }
     closeItemModal();
@@ -330,6 +335,13 @@ function setupEvents() {
     renderAll();
   });
 
+  document.getElementById('statusTabs').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-tab]');
+    if (!button) return;
+    state.activeTab = button.dataset.tab;
+    renderAll();
+  });
+
   document.getElementById('statusFilter').addEventListener('change', (event) => {
     state.statusFilter = event.target.value;
     renderAll();
@@ -347,9 +359,10 @@ function setupEvents() {
 
   document.getElementById('clearFilters').addEventListener('click', () => {
     state.activeRoom = 'Genel';
+    state.activeTab = 'open';
     state.statusFilter = 'Tümü';
     state.priorityFilter = 'Tümü';
-    state.sort = 'priority';
+    state.sort = 'newest';
     renderAll();
   });
 
@@ -383,13 +396,21 @@ function setupEvents() {
       const item = state.items.find((entry) => entry.id === id);
       if (item) openItemModal(item);
     }
+
+    if (action === 'status-done' || action === 'status-open') {
+      const item = state.items.find((entry) => entry.id === id);
+      if (!item) return;
+      if (action === 'status-done') {
+        if (item.status !== 'Tamam') await handleStatusChange(id, 'Tamam');
+        return;
+      }
+      // Ayrıntılı ara durumlar zaten "devam ediyor" sayılır, onlara dokunma.
+      if (item.status === 'Tamam') await handleStatusChange(id, 'Yapılmadı');
+    }
   });
 
   document.body.addEventListener('change', async (event) => {
     const target = event.target;
-    if (target.matches('[data-action="status"]')) {
-      await handleStatusChange(target.dataset.id, target.value);
-    }
     if (target.matches('[data-photo-check]')) {
       attachPhotoSelectionHandlers();
     }

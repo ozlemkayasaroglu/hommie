@@ -1,4 +1,4 @@
-import { state, getSummary, getVisibleItems, escapeHtml, isSpaceOwner } from "./state.js";
+import { state, getSummary, getVisibleItems, getTabCounts, isDone, escapeHtml, isSpaceOwner } from "./state.js";
 import { resolveIconSvg } from "./icons.js";
 
 const roomColorMap = {
@@ -174,6 +174,17 @@ export function renderRoomFilters() {
     .join("");
 }
 
+export function renderTabs() {
+  const counts = getTabCounts();
+  document.querySelectorAll("[data-tab]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.tab === state.activeTab);
+  });
+  Object.entries(counts).forEach(([key, value]) => {
+    const badge = document.querySelector(`[data-count="${key}"]`);
+    if (badge) badge.textContent = value;
+  });
+}
+
 export function renderFilters() {
   const statusEl = document.getElementById("statusFilter");
   const priorityEl = document.getElementById("priorityFilter");
@@ -243,7 +254,7 @@ export function renderCards() {
   list.innerHTML = items
     .map(
       (item) => `
-    <article class="item-card" data-id="${item.id}">
+    <article class="item-card ${isDone(item) ? "is-done" : ""}" data-id="${item.id}">
       ${itemImageMarkup(item)}
       <div class="card-body">
         <div class="card-header">
@@ -264,15 +275,20 @@ export function renderCards() {
         ${renderNoteField(item)}
 
         <div class="card-actions">
-          <label class="compact-field">
-            <span>Durum</span>
-            <select data-action="status" data-id="${item.id}">
-              <option value="Yapılmadı" ${item.status === "Yapılmadı" ? "selected" : ""}>Yapılmadı</option>
-              <option value="Araştırılıyor" ${item.status === "Araştırılıyor" ? "selected" : ""}>Araştırılıyor</option>
-              <option value="Sipariş verildi" ${item.status === "Sipariş verildi" ? "selected" : ""}>Sipariş verildi</option>
-              <option value="Tamam" ${item.status === "Tamam" ? "selected" : ""}>Tamam</option>
-            </select>
-          </label>
+          <div class="status-switch" role="group" aria-label="Durum">
+            <button
+              type="button"
+              class="status-option ${isDone(item) ? "" : "active"}"
+              data-action="status-open"
+              data-id="${item.id}"
+            >Devam ediyor</button>
+            <button
+              type="button"
+              class="status-option done ${isDone(item) ? "active" : ""}"
+              data-action="status-done"
+              data-id="${item.id}"
+            >Tamamlandı</button>
+          </div>
           <button class="secondary-action" data-action="edit" data-id="${item.id}">Düzenle</button>
         </div>
       </div>

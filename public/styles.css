@@ -1100,3 +1100,124 @@ a:focus-visible {
   border-top: 1px solid rgba(27, 26, 58, 0.12);
   padding-top: 12px;
 }
+
+.status-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(27, 26, 58, 0.06);
+  border-radius: 999px;
+  padding: 5px;
+  margin-bottom: 14px;
+}
+
+.status-tab {
+  flex: 1;
+  min-height: 42px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(27, 26, 58, 0.6);
+  font-weight: 800;
+  font-size: 0.92rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.status-tab:hover {
+  color: var(--navy);
+}
+
+.status-tab.active {
+  background: var(--white);
+  color: var(--navy);
+  box-shadow: 0 1px 0 rgba(27, 26, 58, 0.18);
+}
+
+.tab-count {
+  min-width: 24px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(27, 26, 58, 0.08);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.status-tab.active .tab-count {
+  background: var(--yellow);
+}
+
+.status-switch {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  background: rgba(27, 26, 58, 0.07);
+  border-radius: 999px;
+}
+
+.status-option {
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(27, 26, 58, 0.62);
+  font-weight: 800;
+  font-size: 0.82rem;
+  padding: 8px 14px;
+  min-height: 36px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.status-option:hover {
+  color: var(--navy);
+}
+
+.status-option.active {
+  background: var(--white);
+  color: var(--navy);
+  box-shadow: 0 1px 0 rgba(27, 26, 58, 0.2);
+}
+
+.status-option.done.active {
+  background: var(--green);
+  color: var(--white);
+}
+
+.item-card.is-done {
+  opacity: 0.72;
+}
+
+.item-card.is-done .card-header h3 {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+@media (max-width: 640px) {
+  .status-tabs {
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .status-tab {
+    min-height: 38px;
+    font-size: 0.72rem;
+    gap: 4px;
+    padding: 0 6px;
+    white-space: nowrap;
+  }
+
+  .tab-count {
+    min-width: 20px;
+    padding: 1px 5px;
+    font-size: 0.7rem;
+  }
+
+  .status-option {
+    font-size: 0.76rem;
+    padding: 7px 11px;
+  }
+}

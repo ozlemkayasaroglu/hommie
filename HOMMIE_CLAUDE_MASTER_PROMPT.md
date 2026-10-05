@@ -45,9 +45,9 @@ The hero is brand territory and stays in English on purpose:
 The footer credit line is brand territory too and stays in English, with a
 deliberately romantic sign-off:
 
-`Handcrafted with 🧡 and plain vanilla JS — for lovey.`
+`Vibe-coded with 🧡 and plain vanilla JS — for lovey.`
 
-Altındaki Türkçe alt satır ("Ne framework, ne bundler. Sadece aşk ve biraz JavaScript.") bu istisnanın parçasıdır.
+Altındaki Türkçe alt satır ("El emeği göz nuru değil; zihin emeği, prompt nuru. 🧠✨") bu istisnanın parçasıdır — deyimin kendisiyle oynayan bir şaka.
 
 Everything outside the hero and the footer stays Turkish, and the "no romantic
 language" rule below applies to that Turkish UI — not to these two blocks.

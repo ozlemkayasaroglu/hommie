@@ -108,6 +108,10 @@ Varsayılan sıralama **En yeni**'dir, yani yeni eklenen kayıt listenin en üst
 
 ## ALANLAR, ÜYELER, DAVET
 
+Alan bilgisi hero'nun hemen altında kendi şeridinde durur: "BURASI" etiketi, alan adı, üye rozetleri (baş harf avatarı + isim, kendin "(sen)" ile işaretli), "Birini davet et" rozeti ve ayarlar düğmesi. Altında kaç kişi olduğunuza göre değişen bir cümle bulunur — tek kişiyken davet etmeye çağırır, iki kişiyken listeyi birlikte topladığınızı söyler.
+
+Avatar rengi üye kimliğinden türetilir, böylece her üye kendi sabit rengini alır.
+
 - Alan, onboarding penceresinden kurulur ve 6 karakterlik bir davet kodu alır.
 - `?davet=KOD` bağlantısı "Davet koduyla katıl" sekmesini açıp kodu doldurur.
 - Öğeler `x-space-id` / `x-member-id` başlıklarıyla alana bağlıdır.

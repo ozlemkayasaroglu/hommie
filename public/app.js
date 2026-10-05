@@ -397,6 +397,13 @@ function setupEvents() {
       if (item) openItemModal(item);
     }
 
+    if (action === 'invite') {
+      renderSpace();
+      state.isModalOpen = true;
+      spaceDialog.showModal();
+      return;
+    }
+
     if (action === 'set-status') {
       const item = state.items.find((entry) => entry.id === id);
       const next = target.dataset.status;

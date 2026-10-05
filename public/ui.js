@@ -357,14 +357,58 @@ export function showToast(message) {
   toast._timer = setTimeout(() => toast.classList.remove("visible"), 2200);
 }
 
-export function renderSpace() {
-  const button = document.getElementById("spaceButton");
-  const label = document.getElementById("spaceButtonLabel");
-  if (!button || !label) return;
+const MEMBER_COLORS = ["#FF8A3D", "#26B5E8", "#FF5FA2", "#8B5CF6", "#2BB673", "#FFC93C"];
 
-  button.hidden = !state.space;
+function memberInitials(name) {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toLocaleUpperCase("tr-TR");
+  return (parts[0][0] + parts[1][0]).toLocaleUpperCase("tr-TR");
+}
+
+function memberColor(id = "") {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) % 997;
+  return MEMBER_COLORS[hash % MEMBER_COLORS.length];
+}
+
+function spaceHint(count) {
+  if (count <= 1) return "Bu evi şimdilik tek başına topluyorsun. Birini davet et, yük yarıya insin.";
+  if (count === 2) return "Bu listeyi ikiniz topluyorsunuz. Aynı kartları görüyor, aynı anda güncelliyorsunuz.";
+  return `Bu listeyi ${count} kişi topluyor.`;
+}
+
+export function renderSpace() {
+  const panel = document.getElementById("spacePanel");
+  if (!panel) return;
+
+  panel.hidden = !state.space;
   if (!state.space) return;
-  label.textContent = state.space.name;
+
+  document.getElementById("spacePanelName").textContent = state.space.name;
+
+  const members = state.members.length > 0 ? state.members : [state.member].filter(Boolean);
+  document.getElementById("spaceMembers").innerHTML = `
+    ${members
+      .map((member) => {
+        const isSelf = member.id === state.memberId;
+        return `
+      <span class="member-chip ${isSelf ? "is-self" : ""}" title="${escapeHtml(member.name)}">
+        <span class="member-avatar" style="background:${memberColor(member.id)}">${escapeHtml(memberInitials(member.name))}</span>
+        <span class="member-chip-name">${escapeHtml(member.name)}${isSelf ? " (sen)" : ""}</span>
+      </span>`;
+      })
+      .join("")}
+    <button type="button" class="member-chip invite" data-action="invite">
+      <span class="member-avatar invite-avatar">+</span>
+      <span class="member-chip-name">Birini davet et</span>
+    </button>
+  `;
+
+  document.getElementById("spacePanelHint").textContent = spaceHint(members.length);
 
   const nameInput = document.getElementById("spaceNameInput");
   if (nameInput && document.activeElement !== nameInput) {
@@ -383,6 +427,7 @@ export function renderSpace() {
         const canRemove = isSpaceOwner() && !isSelf;
         return `
       <li class="member-row">
+        <span class="member-avatar" style="background:${memberColor(member.id)}">${escapeHtml(memberInitials(member.name))}</span>
         <span class="member-name">${escapeHtml(member.name)}${isSelf ? " (sen)" : ""}</span>
         <span class="member-role">${escapeHtml(member.role)}</span>
         ${canRemove ? `<button type="button" class="mini-btn" data-remove-member="${member.id}">Çıkar</button>` : ""}

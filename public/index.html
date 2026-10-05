@@ -20,6 +20,27 @@
     <div class="page-shell">
       <header id="hero" class="hero" aria-live="polite"></header>
 
+      <section id="spacePanel" class="space-panel" aria-label="Alan" hidden>
+        <div class="space-panel-main">
+          <div class="space-identity">
+            <span class="space-eyebrow">Burası</span>
+            <h2 id="spacePanelName" class="space-panel-name"></h2>
+          </div>
+          <button
+            type="button"
+            id="spaceButton"
+            class="icon-button space-settings-button"
+            aria-label="Alan ayarları"
+            title="Alan ayarları"
+          >
+            ⚙
+          </button>
+        </div>
+
+        <div id="spaceMembers" class="space-members"></div>
+        <p id="spacePanelHint" class="space-panel-hint"></p>
+      </section>
+
       <section class="toolbar" aria-label="Filtreleme ve sıralama">
         <div class="toolbar-header">
           <div class="toolbar-title"><span class="toolbar-logo">🦒</span></div>
@@ -104,9 +125,6 @@
           accept=".xlsx,.xls,.csv"
           hidden
         />
-        <button id="spaceButton" class="secondary-button" hidden>
-          <span id="spaceButtonLabel">Alan ayarları</span>
-        </button>
       </section>
 
       <section

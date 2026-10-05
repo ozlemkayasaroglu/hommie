@@ -1,5 +1,5 @@
 export const ROOM_OPTIONS = ['Genel', 'Salon', 'Mutfak', 'Yatak Odası', 'Banyo', 'Balkon', 'Antre'];
-export const STATUS_OPTIONS = ['Yapılmadı', 'Araştırılıyor', 'Sipariş verildi', 'Tamam'];
+export const STATUS_OPTIONS = ['Başlamadı', 'Devam ediyor', 'Tamamlandı'];
 export const PRIORITY_OPTIONS = [1, 2, 3];
 export const TYPE_OPTIONS = ['Alınacak', 'Yapılacak', 'Tamir', 'Resmi iş'];
 

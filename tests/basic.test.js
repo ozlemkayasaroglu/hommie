@@ -10,7 +10,7 @@ describe('validation', () => {
       room: 'Salon',
       type: 'Alınacak',
       priority: 2,
-      status: 'Yapılmadı',
+      status: 'Başlamadı',
       note: 'Güzel bir dekoratif bitki.'
     });
 
@@ -25,7 +25,7 @@ describe('validation', () => {
       room: 'Not valid',
       type: 'Alınacak',
       priority: 1,
-      status: 'Yapılmadı',
+      status: 'Başlamadı',
       note: 'Test'
     })).toThrow();
   });

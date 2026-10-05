@@ -92,13 +92,15 @@ Sayaçlar seçili odaya göre hesaplanır.
 
 ### Kart üzerindeki durum
 
-Her kartta iki durumlu bir anahtar bulunur: **Devam ediyor** / **Tamamlandı**.
+Her kartta üç durumlu bir seçim şeridi bulunur:
 
-- "Tamamlandı" kaydı `Tamam` yapar; kart soluklaşır ve başlığı üstü çizili görünür.
-- "Devam ediyor" yalnızca `Tamam` olan bir kaydı `Yapılmadı`ya döndürür. Kayıt zaten `Araştırılıyor` veya `Sipariş verildi` ise bu ayrıntılı durum korunur.
-- Ayrıntılı durumlar (`Yapılmadı`, `Araştırılıyor`, `Sipariş verildi`, `Tamam`) düzenleme penceresinden ve üstteki Durum filtresinden kullanılmaya devam eder.
+- **Başlamadı** — varsayılan
+- **Devam ediyor**
+- **Tamamlandı** — kart soluklaşır, başlığı üstü çizili görünür
 
-Kartta dört seçenekli durum menüsü kullanılmaz; o menü yerini bu anahtara bırakmıştır.
+Bu üç değer veritabanındaki tek geçerli durum kümesidir. Eski dört durumlu şema (`Yapılmadı`, `Araştırılıyor`, `Sipariş verildi`, `Tamam`) otomatik olarak dönüştürülür: `Yapılmadı → Başlamadı`, `Araştırılıyor` ve `Sipariş verildi → Devam ediyor`, `Tamam → Tamamlandı`. Excel içe aktarımı da eski etiketleri aynı şekilde çevirir.
+
+Üstteki Durum filtresi ve düzenleme penceresi aynı üç seçeneği kullanır.
 
 ### Sıralama
 

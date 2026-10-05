@@ -24,8 +24,10 @@ export const state = {
   lastInteractionTs: Date.now()
 };
 
+export const DONE_STATUS = 'Tamamlandı';
+
 export function isDone(item) {
-  return item?.status === 'Tamam';
+  return item?.status === DONE_STATUS;
 }
 
 export function getTabCounts() {
@@ -54,7 +56,7 @@ export function getVisibleItems() {
     .sort((a, b) => {
       if (state.sort === 'newest') return new Date(b.created_at || 0) - new Date(a.created_at || 0);
       if (state.sort === 'oldest') return new Date(a.created_at || 0) - new Date(b.created_at || 0);
-      if (state.sort === 'completed') return (a.status === 'Tamam' ? 1 : 0) - (b.status === 'Tamam' ? 1 : 0);
+      if (state.sort === 'completed') return (isDone(a) ? 1 : 0) - (isDone(b) ? 1 : 0);
       const priorityDiff = (a.priority || 99) - (b.priority || 99);
       if (priorityDiff !== 0) return priorityDiff;
       return new Date(a.created_at || 0) - new Date(b.created_at || 0);
@@ -63,7 +65,7 @@ export function getVisibleItems() {
 
 export function getSummary() {
   const total = state.items.length;
-  const complete = state.items.filter((item) => item.status === 'Tamam').length;
+  const complete = state.items.filter(isDone).length;
   const remaining = total - complete;
   const percent = total ? Math.round((complete / total) * 100) : 0;
   return { total, complete, remaining, percent };

@@ -59,14 +59,14 @@ function openItemModal(item = null) {
     itemForm.elements.room.value = item.room || 'Genel';
     itemForm.elements.type.value = item.type || 'Alınacak';
     itemForm.elements.priority.value = String(item.priority || 1);
-    itemForm.elements.status.value = item.status || 'Yapılmadı';
+    itemForm.elements.status.value = item.status || 'Başlamadı';
     itemForm.elements.note.value = item.note || '';
   } else {
     title.textContent = 'Yeni öğe';
     itemForm.elements.room.value = 'Genel';
     itemForm.elements.type.value = 'Alınacak';
     itemForm.elements.priority.value = '2';
-    itemForm.elements.status.value = 'Yapılmadı';
+    itemForm.elements.status.value = 'Başlamadı';
   }
   itemModal.showModal();
   state.isModalOpen = true;
@@ -268,7 +268,7 @@ async function handleAddSuggested() {
         room: suggestion.room || state.photoRoom || 'Genel',
         type: suggestion.type || 'Alınacak',
         priority: Number(suggestion.priority || 3),
-        status: 'Yapılmadı',
+        status: 'Başlamadı',
         note: [suggestion.reason, suggestion.style ? `(${suggestion.style})` : ''].filter(Boolean).join(' ')
       });
     }
@@ -397,15 +397,12 @@ function setupEvents() {
       if (item) openItemModal(item);
     }
 
-    if (action === 'status-done' || action === 'status-open') {
+    if (action === 'set-status') {
       const item = state.items.find((entry) => entry.id === id);
-      if (!item) return;
-      if (action === 'status-done') {
-        if (item.status !== 'Tamam') await handleStatusChange(id, 'Tamam');
-        return;
+      const next = target.dataset.status;
+      if (item && next && item.status !== next) {
+        await handleStatusChange(id, next);
       }
-      // Ayrıntılı ara durumlar zaten "devam ediyor" sayılır, onlara dokunma.
-      if (item.status === 'Tamam') await handleStatusChange(id, 'Yapılmadı');
     }
   });
 

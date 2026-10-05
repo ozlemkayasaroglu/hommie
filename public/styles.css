@@ -1158,6 +1158,10 @@ a:focus-visible {
   border-radius: 999px;
 }
 
+.status-switch {
+  flex-wrap: wrap;
+}
+
 .status-option {
   border: none;
   border-radius: 999px;
@@ -1180,6 +1184,16 @@ a:focus-visible {
   background: var(--white);
   color: var(--navy);
   box-shadow: 0 1px 0 rgba(27, 26, 58, 0.2);
+}
+
+.status-option.todo.active {
+  background: var(--white);
+  color: var(--navy);
+}
+
+.status-option.doing.active {
+  background: var(--cyan);
+  color: var(--white);
 }
 
 .status-option.done.active {

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { isDbEnabled, sqlReady } from './db.js';
 import { readJson, writeJson } from './store.js';
+import { normalizeStatus } from './validation.js';
 
 const ITEMS_KEY = 'items';
 
@@ -10,6 +11,7 @@ function normalizeRow(row) {
   if (!row) return null;
   return {
     ...row,
+    status: normalizeStatus(row.status),
     priority: Number(row.priority),
     image_tried: Boolean(row.image_tried),
     created_at:
@@ -25,7 +27,7 @@ export function createItemRecord(input) {
     room: input.room,
     type: input.type,
     priority: Number(input.priority) || 3,
-    status: input.status || 'Yapılmadı',
+    status: normalizeStatus(input.status),
     note: input.note || '',
     price: input.price ?? null,
     image_url: input.image_url ?? null,
@@ -40,7 +42,8 @@ export function createItemRecord(input) {
 
 async function fileAll() {
   const items = await readJson(ITEMS_KEY, null);
-  return Array.isArray(items) ? items : [];
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => ({ ...item, status: normalizeStatus(item.status) }));
 }
 
 const inSpace = (item, spaceId) => (spaceId ? item.space_id === spaceId : !item.space_id);

@@ -55,7 +55,7 @@ export function ensureSchema() {
         room text NOT NULL,
         type text NOT NULL,
         priority integer NOT NULL DEFAULT 3,
-        status text NOT NULL DEFAULT 'Yapılmadı',
+        status text NOT NULL DEFAULT 'Başlamadı',
         note text NOT NULL DEFAULT '',
         price jsonb,
         image_url text,
@@ -68,6 +68,7 @@ export function ensureSchema() {
     await sql`CREATE INDEX IF NOT EXISTS items_space_idx ON items(space_id)`;
     await sql`CREATE INDEX IF NOT EXISTS members_space_idx ON members(space_id)`;
     await migrateFromBlobs(sql);
+    await migrateStatuses(sql);
   })().catch((error) => {
     // Sonraki istek yeniden denesin.
     schemaPromise = null;
@@ -120,6 +121,17 @@ async function migrateFromBlobs(sql) {
   } catch (error) {
     // Taşıma başarısız olsa bile uygulama Neon ile çalışmaya devam etmeli.
     console.error('[db] blob migration failed', error?.message);
+  }
+}
+
+// Dört durumlu eski şemadan üç duruma geçiş.
+async function migrateStatuses(sql) {
+  try {
+    await sql`UPDATE items SET status = 'Başlamadı' WHERE status = 'Yapılmadı'`;
+    await sql`UPDATE items SET status = 'Devam ediyor' WHERE status IN ('Araştırılıyor', 'Sipariş verildi')`;
+    await sql`UPDATE items SET status = 'Tamamlandı' WHERE status = 'Tamam'`;
+  } catch (error) {
+    console.error('[db] status migration failed', error?.message);
   }
 }
 

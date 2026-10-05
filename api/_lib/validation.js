@@ -1,7 +1,24 @@
 export const ALLOWED_ROOMS = ['Genel', 'Salon', 'Mutfak', 'Yatak Odası', 'Banyo', 'Balkon', 'Antre'];
 export const ALLOWED_TYPES = ['Alınacak', 'Yapılacak', 'Tamir', 'Resmi iş'];
 export const ALLOWED_PRIORITIES = [1, 2, 3];
-export const ALLOWED_STATUSES = ['Yapılmadı', 'Araştırılıyor', 'Sipariş verildi', 'Tamam'];
+export const ALLOWED_STATUSES = ['Başlamadı', 'Devam ediyor', 'Tamamlandı'];
+export const DEFAULT_STATUS = 'Başlamadı';
+export const DONE_STATUS = 'Tamamlandı';
+
+// Eski kayıtlar ve Excel dosyaları dört durumlu şemayı kullanıyordu.
+export const LEGACY_STATUS_MAP = {
+  'Yapılmadı': 'Başlamadı',
+  'Araştırılıyor': 'Devam ediyor',
+  'Sipariş verildi': 'Devam ediyor',
+  'Tamam': 'Tamamlandı'
+};
+
+export function normalizeStatus(value, fallback = DEFAULT_STATUS) {
+  const text = String(value ?? '').trim();
+  if (!text) return fallback;
+  if (ALLOWED_STATUSES.includes(text)) return text;
+  return LEGACY_STATUS_MAP[text] || fallback;
+}
 
 const ITEM_ALLOWED_FIELDS = new Set([
   'id',
@@ -59,7 +76,7 @@ export function validateCreatePayload(input) {
   const name = ensureString(input.name, 'name');
   const room = ensureString(input.room, 'room');
   const type = ensureString(input.type, 'type');
-  const status = ensureString(input.status, 'status');
+  const status = normalizeStatus(ensureString(input.status, 'status'), '');
   const note = typeof input.note === 'string' ? input.note : '';
 
   if (!isValidRoom(room)) throw new Error('Invalid room.');
@@ -108,8 +125,9 @@ export function validatePatchPayload(input) {
     allowed.priority = Number(input.priority);
   }
   if ('status' in input) {
-    if (!isValidStatus(input.status)) throw new Error('Invalid status.');
-    allowed.status = input.status;
+    const status = normalizeStatus(input.status, '');
+    if (!isValidStatus(status)) throw new Error('Invalid status.');
+    allowed.status = status;
   }
   if ('note' in input) allowed.note = typeof input.note === 'string' ? input.note : '';
   if ('price' in input) allowed.price = input.price ?? null;
@@ -123,8 +141,8 @@ export function validatePatchPayload(input) {
 
 export function createSortComparator() {
   return (a, b) => {
-    const aComplete = a.status === 'Tamam' ? 1 : 0;
-    const bComplete = b.status === 'Tamam' ? 1 : 0;
+    const aComplete = a.status === DONE_STATUS ? 1 : 0;
+    const bComplete = b.status === DONE_STATUS ? 1 : 0;
     if (aComplete !== bComplete) return aComplete - bComplete;
     if ((a.priority ?? 99) !== (b.priority ?? 99)) return (a.priority ?? 99) - (b.priority ?? 99);
     return new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime();

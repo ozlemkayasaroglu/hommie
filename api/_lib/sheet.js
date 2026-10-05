@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { ALLOWED_ROOMS, ALLOWED_TYPES, ALLOWED_STATUSES } from './validation.js';
+import { ALLOWED_ROOMS, ALLOWED_TYPES, normalizeStatus } from './validation.js';
 
 const HEADER_ALIASES = {
   room: ['oda', 'oda / alan', 'alan', 'oda/alan', 'bölüm'],
@@ -88,7 +88,7 @@ export function parseSheet(buffer) {
         room: pickAllowed(row[header.map.room], ALLOWED_ROOMS, 'Genel'),
         type: pickAllowed(row[header.map.type], ALLOWED_TYPES, 'Alınacak'),
         priority: parsePriority(row[header.map.priority]),
-        status: pickAllowed(row[header.map.status], ALLOWED_STATUSES, 'Yapılmadı'),
+        status: normalizeStatus(row[header.map.status]),
         note: String(row[header.map.note] ?? '').trim().slice(0, 500)
       });
     }

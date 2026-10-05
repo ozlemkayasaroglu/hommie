@@ -158,7 +158,7 @@ export function renderRoomFilters() {
     const roomItems = state.items.filter((item) =>
       room === "Genel" ? true : item.room === room,
     );
-    counts[room] = roomItems.filter((item) => item.status !== "Tamam").length;
+    counts[room] = roomItems.filter((item) => !isDone(item)).length;
   });
 
   container.innerHTML = rooms
@@ -237,6 +237,12 @@ function itemImageMarkup(item) {
   `;
 }
 
+const STATUS_CHOICES = [
+  { value: "Başlamadı", label: "Başlamadı", modifier: "todo" },
+  { value: "Devam ediyor", label: "Devam ediyor", modifier: "doing" },
+  { value: "Tamamlandı", label: "Tamamlandı", modifier: "done" },
+];
+
 export function renderCards() {
   const list = document.getElementById("cardList");
   const items = getVisibleItems();
@@ -276,18 +282,16 @@ export function renderCards() {
 
         <div class="card-actions">
           <div class="status-switch" role="group" aria-label="Durum">
+            ${STATUS_CHOICES.map(
+              (choice) => `
             <button
               type="button"
-              class="status-option ${isDone(item) ? "" : "active"}"
-              data-action="status-open"
+              class="status-option ${choice.modifier} ${item.status === choice.value ? "active" : ""}"
+              data-action="set-status"
+              data-status="${choice.value}"
               data-id="${item.id}"
-            >Devam ediyor</button>
-            <button
-              type="button"
-              class="status-option done ${isDone(item) ? "active" : ""}"
-              data-action="status-done"
-              data-id="${item.id}"
-            >Tamamlandı</button>
+            >${choice.label}</button>`,
+            ).join("")}
           </div>
           <button class="secondary-action" data-action="edit" data-id="${item.id}">Düzenle</button>
         </div>

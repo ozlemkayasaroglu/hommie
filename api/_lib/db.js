@@ -70,6 +70,14 @@ export function ensureSchema() {
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS members_recovery_idx ON members(recovery_code)`;
     await sql`ALTER TABLE spaces ADD COLUMN IF NOT EXISTS deleted_at timestamptz`;
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS meta (
+        key text PRIMARY KEY,
+        value text,
+        updated_at timestamptz NOT NULL DEFAULT now()
+      )
+    `;
+
     await sql`CREATE INDEX IF NOT EXISTS items_space_idx ON items(space_id)`;
     await sql`CREATE INDEX IF NOT EXISTS members_space_idx ON members(space_id)`;
     await migrateFromBlobs(sql);
@@ -87,9 +95,20 @@ export function ensureSchema() {
 // taşınır; tablolar boş değilse hiçbir şey yapılmaz.
 async function migrateFromBlobs(sql) {
   try {
+    // Bir kez çalışır ve işaretlenir. Tablolar sonradan boşaltılsa bile
+    // taşıma tekrar etmez, silinen veri geri gelmez.
+    const done = await sql`SELECT value FROM meta WHERE key = 'blobs_migrated'`;
+    if (done.length > 0) return;
+
     const [{ count }] = await sql`SELECT count(*)::int AS count FROM spaces`;
     const [items] = await sql`SELECT count(*)::int AS count FROM items`;
-    if (count > 0 || items.count > 0) return;
+    if (count > 0 || items.count > 0) {
+      await sql`
+        INSERT INTO meta (key, value) VALUES ('blobs_migrated', 'skipped')
+        ON CONFLICT (key) DO NOTHING
+      `;
+      return;
+    }
 
     const legacySpaces = await readJson('spaces', null);
     const legacyItems = await readJson('items', null);
@@ -97,6 +116,7 @@ async function migrateFromBlobs(sql) {
     const members = Array.isArray(legacySpaces?.members) ? legacySpaces.members : [];
     const rows = Array.isArray(legacyItems) ? legacyItems : [];
     if (spaces.length === 0 && rows.length === 0) return;
+
 
     for (const space of spaces) {
       await sql`
@@ -123,6 +143,10 @@ async function migrateFromBlobs(sql) {
         ON CONFLICT (id) DO NOTHING
       `;
     }
+    await sql`
+      INSERT INTO meta (key, value) VALUES ('blobs_migrated', ${new Date().toISOString()})
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+    `;
     console.log('[db] migrated from blobs', { spaces: spaces.length, members: members.length, items: rows.length });
   } catch (error) {
     // Taşıma başarısız olsa bile uygulama Neon ile çalışmaya devam etmeli.

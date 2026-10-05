@@ -112,6 +112,16 @@ Bu üç değer veritabanındaki tek geçerli durum kümesidir. Eski dört duruml
 
 Üstteki Durum filtresi ve düzenleme penceresi aynı üç seçeneği kullanır.
 
+### Yorumlar
+
+Her kartın altında bir yorum akışı bulunur. Tek satırlık "Not" alanı kaldırılmıştır; yerine kim ne zaman yazdı belli olan yorumlar gelir.
+
+- Her yorumda yazarın baş harf avatarı, adı (kendi yorumunda "(sen)"), göreli zaman ("az önce", "3 sa önce") ve metin görünür.
+- Alandaki herkes yorum yazabilir ve herkesin yorumunu görür.
+- Kendi yorumunu herkes silebilir; başkasınınkini yalnızca alanı kuran kişi silebilir.
+- Enter gönderir, Shift+Enter alt satıra geçer. Yorum en fazla 1000 karakterdir.
+- Yorumlar `comments` tablosunda kayıtlıdır ve kayıt silinince birlikte silinir.
+
 ### Sıralama
 
 Varsayılan sıralama **En yeni**'dir, yani yeni eklenen kayıt listenin en üstünde görünür. Yeni kayıt eklendiğinde sıralama "En yeni"ye döner ve "Bitenler" sekmesindeyken "Devam edenler" sekmesine geçilir ki kayıt görünür olsun.

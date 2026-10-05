@@ -137,3 +137,18 @@ export async function importSheet(fileName, base64) {
     body: JSON.stringify({ fileName, file: base64 })
   });
 }
+
+export async function fetchComments() {
+  return apiFetch('/api/comments');
+}
+
+export async function createComment(itemId, text) {
+  return apiFetch('/api/comments', {
+    method: 'POST',
+    body: JSON.stringify({ itemId, text })
+  });
+}
+
+export async function deleteComment(id) {
+  return apiFetch(`/api/comments?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+}

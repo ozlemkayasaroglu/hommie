@@ -1,4 +1,4 @@
-import { state, getSummary, getVisibleItems, getTabCounts, isDone, escapeHtml, isSpaceOwner } from "./state.js";
+import { state, getSummary, getVisibleItems, getTabCounts, getItemComments, isDone, escapeHtml, isSpaceOwner } from "./state.js";
 import { resolveIconSvg } from "./icons.js";
 
 const roomColorMap = {
@@ -200,17 +200,56 @@ export function renderFilters() {
   }
 }
 
-function renderNoteField(item) {
+function timeAgo(value) {
+  const diff = Date.now() - new Date(value).getTime();
+  const minute = 60000;
+  if (diff < minute) return "az önce";
+  if (diff < 60 * minute) return `${Math.floor(diff / minute)} dk önce`;
+  if (diff < 24 * 60 * minute) return `${Math.floor(diff / (60 * minute))} sa önce`;
+  const days = Math.floor(diff / (24 * 60 * minute));
+  if (days < 7) return `${days} gün önce`;
+  return new Date(value).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+}
+
+function renderComments(item) {
+  const comments = getItemComments(item.id);
+
+  const thread = comments
+    .map((comment) => {
+      const isSelf = comment.member_id && comment.member_id === state.memberId;
+      const canDelete = isSelf || isSpaceOwner();
+      return `
+      <li class="comment">
+        <span class="comment-avatar" style="background:${memberColor(comment.member_id || comment.id)}">${escapeHtml(memberInitials(comment.member_name))}</span>
+        <div class="comment-body">
+          <div class="comment-meta">
+            <strong>${escapeHtml(comment.member_name)}${isSelf ? " (sen)" : ""}</strong>
+            <span class="comment-time">${escapeHtml(timeAgo(comment.created_at))}</span>
+            ${canDelete ? `<button type="button" class="comment-delete" data-action="delete-comment" data-id="${comment.id}" aria-label="Yorumu sil">×</button>` : ""}
+          </div>
+          <p class="comment-text">${escapeHtml(comment.text)}</p>
+        </div>
+      </li>`;
+    })
+    .join("");
+
   return `
-    <label class="note-field">
-      <span>Not</span>
-      <textarea
-        data-action="note"
-        data-id="${item.id}"
-        placeholder="Yapılacaklar, notlar..."
-        rows="2"
-      >${escapeHtml(item.note || "")}</textarea>
-    </label>
+    <div class="comment-block">
+      <div class="comment-head">
+        <span>Yorumlar</span>
+        ${comments.length > 0 ? `<span class="comment-count">${comments.length}</span>` : ""}
+      </div>
+      ${comments.length > 0 ? `<ul class="comment-list">${thread}</ul>` : `<p class="comment-empty">Henüz yorum yok. İlk notu sen düş.</p>`}
+      <form class="comment-form" data-action="comment-form" data-id="${item.id}">
+        <textarea
+          class="comment-input"
+          data-comment-input="${item.id}"
+          placeholder="Bir şey yaz..."
+          rows="1"
+        ></textarea>
+        <button type="submit" class="comment-send" aria-label="Yorumu gönder">Gönder</button>
+      </form>
+    </div>
   `;
 }
 
@@ -278,7 +317,7 @@ export function renderCards() {
           <span>Durum: <strong>${escapeHtml(item.status)}</strong></span>
         </div>
 
-        ${renderNoteField(item)}
+        ${renderComments(item)}
 
         <div class="card-actions">
           <div class="status-switch" role="group" aria-label="Durum">

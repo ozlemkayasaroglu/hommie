@@ -7,6 +7,9 @@ import {
   requestImageLookup,
   uploadUserImage,
   importSheet,
+  fetchComments,
+  createComment,
+  deleteComment,
   createSpace,
   joinSpace,
   recoverSpace,
@@ -107,8 +110,9 @@ async function loadItems({ silent = false } = {}) {
       }
     }
 
-    const refreshed = await fetchItems();
+    const [refreshed, commentResult] = await Promise.all([fetchItems(), fetchComments()]);
     state.items = refreshed;
+    state.comments = Array.isArray(commentResult?.comments) ? commentResult.comments : [];
     renderAll();
   } catch (error) {
     if (error?.message === 'unauthorized') {
@@ -172,16 +176,6 @@ async function handleStatusChange(id, value) {
     showToast(error?.message || 'Durum güncellenemedi.');
   } finally {
     state.isMutating = false;
-  }
-}
-
-async function handleNoteChange(id, value) {
-  try {
-    await updateItem(id, { note: value });
-    const item = state.items.find((entry) => entry.id === id);
-    if (item) item.note = value;
-  } catch (error) {
-    showToast(error?.message || 'Not kaydedilemedi.');
   }
 }
 
@@ -406,6 +400,17 @@ function setupEvents() {
       return;
     }
 
+    if (action === 'delete-comment') {
+      try {
+        await deleteComment(id);
+        state.comments = state.comments.filter((comment) => comment.id !== id);
+        renderAll();
+      } catch (error) {
+        showToast(error?.message || 'Yorum silinemedi.');
+      }
+      return;
+    }
+
     if (action === 'set-status') {
       const item = state.items.find((entry) => entry.id === id);
       const next = target.dataset.status;
@@ -420,9 +425,7 @@ function setupEvents() {
     if (target.matches('[data-photo-check]')) {
       attachPhotoSelectionHandlers();
     }
-    if (target.matches('[data-action="note"]')) {
-      await handleNoteChange(target.dataset.id, target.value);
-    }
+
   });
 
   document.body.addEventListener('keydown', (event) => {
@@ -433,6 +436,17 @@ function setupEvents() {
       if (passwordDialog.open) {
         closePasswordDialog();
       }
+    }
+  });
+
+  document.body.addEventListener('submit', handleCommentSubmit);
+
+  // Enter gönderir, Shift+Enter alt satıra geçer.
+  document.body.addEventListener('keydown', (event) => {
+    if (!event.target.matches('.comment-input')) return;
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      event.target.closest('form')?.requestSubmit();
     }
   });
 
@@ -684,6 +698,29 @@ async function handleSheetImport(event) {
     }
   } catch (error) {
     showToast(error?.message || 'Dosya aktarılamadı.');
+  } finally {
+    state.isMutating = false;
+  }
+}
+
+async function handleCommentSubmit(event) {
+  const form = event.target.closest('[data-action="comment-form"]');
+  if (!form) return;
+  event.preventDefault();
+
+  const input = form.querySelector('.comment-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  try {
+    state.isMutating = true;
+    const result = await createComment(form.dataset.id, text);
+    state.comments = [...state.comments, result.comment];
+    renderAll();
+  } catch (error) {
+    input.value = text;
+    showToast(error?.message || 'Yorum gönderilemedi.');
   } finally {
     state.isMutating = false;
   }

@@ -71,6 +71,20 @@ export function ensureSchema() {
     await sql`ALTER TABLE spaces ADD COLUMN IF NOT EXISTS deleted_at timestamptz`;
 
     await sql`
+      CREATE TABLE IF NOT EXISTS comments (
+        id uuid PRIMARY KEY,
+        item_id uuid NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+        space_id uuid REFERENCES spaces(id) ON DELETE CASCADE,
+        member_id uuid,
+        member_name text NOT NULL DEFAULT '',
+        text text NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS comments_item_idx ON comments(item_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS comments_space_idx ON comments(space_id)`;
+
+    await sql`
       CREATE TABLE IF NOT EXISTS meta (
         key text PRIMARY KEY,
         value text,

@@ -1,5 +1,6 @@
 export const state = {
   items: [],
+  comments: [],
   activeRoom: 'Genel',
   statusFilter: 'Tümü',
   priorityFilter: 'Tümü',
@@ -25,6 +26,10 @@ export const state = {
 };
 
 export const DONE_STATUS = 'Tamamlandı';
+
+export function getItemComments(itemId) {
+  return state.comments.filter((comment) => comment.item_id === itemId);
+}
 
 export function isDone(item) {
   return item?.status === DONE_STATUS;

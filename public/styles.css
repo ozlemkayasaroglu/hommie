@@ -1028,6 +1028,11 @@ a:focus-visible {
   gap: 12px;
 }
 
+/* display:flex, hidden özniteliğini ezdiği için panelleri açıkça gizliyoruz. */
+.space-form[hidden] {
+  display: none;
+}
+
 #joinSpaceCode {
   text-transform: uppercase;
   letter-spacing: 0.22em;

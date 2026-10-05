@@ -30,33 +30,46 @@ function getHeroMessage() {
 function animateEyebrow(target) {
   const words = [
     "HOMMIE",
-    "selam",
-    "hey sen",
-    "yine mi sen?",
-    "baş belası",
-    "kaos ustası",
-    "ev halkı",
-    "liste delisi",
-    "koli kahramanı",
-    "bugün olur mu?",
-    "az kaldı",
-    "sen yaparsın",
-    "hadi bakalım",
-    "bir tık daha",
-    "oda oda",
-    "zürafa onaylı",
-    "kutular konuşuyor",
-    "burası senin",
-    "düzen geliyor",
-    "neredeyse ev",
-    "işte böyle",
-    "devam et",
-    "bak sen şuna",
-    "fena değil",
-    "eh işte",
-    "yavaş yavaş",
-    "bir gün biter",
-    "ev olacak. 😏",
+    "sweetie",
+    "honey",
+    "cutie",
+    "darling",
+    "my love",
+    "hey, you",
+    "trouble",
+    "pretty",
+    "hot stuff",
+    "my weakness",
+    "my home",
+    "my person",
+    "roomie",
+    "favorite human",
+    "still you.",
+    "little menace",
+    "you again?",
+    "my chaos",
+    "troublemaker",
+    "partner in crime",
+    "baby",
+    "babe",
+    "sweetheart",
+    "sunshine",
+    "lovey",
+    "handsome",
+    "pretty thing",
+    "my favorite",
+    "lucky me",
+    "yours truly",
+    "come here",
+    "look at you",
+    "miss you",
+    "lovebug",
+    "boo",
+    "xoxo",
+    "just us",
+    "us, always",
+    "home sweet home",
+    "mine. 😏",
   ];
 
   let wordIndex = 0;
@@ -97,11 +110,11 @@ export function renderHero() {
     <div class="hero-copy">
       
       <div class="eyebrow">
-        <span class="eyebrow-word" aria-live="polite"></span>
+        <span class="eyebrow-word" lang="en" aria-live="polite"></span>
       </div>
       <h1 class="hero-title">
-        <span class="hero-line">Şimdilik dağınık.</span>
-        <span class="hero-line">Yakında ev.</span>
+        <span class="hero-line">Messy now.</span>
+        <span class="hero-line">Home later.</span>
       </h1>
       <p class="hero-subtitle"></p>
     </div>

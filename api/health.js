@@ -1,5 +1,17 @@
 import { isDbEnabled, sqlReady } from './_lib/db.js';
 
+// Hangi sunucuya bağlanmaya çalıştığımızı göstermek için; şifre asla yazılmaz.
+function dbHost() {
+  const raw =
+    process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || '';
+  if (!raw) return null;
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return 'çözümlenemedi';
+  }
+}
+
 // Hangi depolamanın kullanıldığını ve veritabanının gerçekten erişilebilir
 // olduğunu tek bakışta görmek için.
 export default async function handler(req, res) {
@@ -14,6 +26,7 @@ export default async function handler(req, res) {
       NETLIFY_DATABASE_URL: Boolean(process.env.NETLIFY_DATABASE_URL),
       NEON_DATABASE_URL: Boolean(process.env.NEON_DATABASE_URL)
     },
+    dbHost: dbHost(),
     commit: (process.env.COMMIT_REF || '').slice(0, 7) || null
   };
 

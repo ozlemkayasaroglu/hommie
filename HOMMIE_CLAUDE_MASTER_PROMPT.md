@@ -40,7 +40,17 @@ The hero is brand territory and stays in English on purpose:
 - The brand name is written `HOMMIE` — never `Hommie` inside an uppercased element, because Turkish uppercasing turns `i` into `İ`.
 - The typewriter element carries `lang="en"` so the browser uses English casing rules.
 
-Everything outside the hero stays Turkish.
+### Exception: the footer
+
+The footer credit line is brand territory too and stays in English, with a
+deliberately romantic sign-off:
+
+`Handcrafted with 🧡 and plain vanilla JS — for lovey.`
+
+Altındaki Türkçe alt satır ("Ne framework, ne bundler. Sadece aşk ve biraz JavaScript.") bu istisnanın parçasıdır.
+
+Everything outside the hero and the footer stays Turkish, and the "no romantic
+language" rule below applies to that Turkish UI — not to these two blocks.
 
 ### Wording
 

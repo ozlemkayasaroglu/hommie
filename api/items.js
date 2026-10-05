@@ -1,21 +1,22 @@
-import { readItems, writeItems, createItemRecord } from './_lib/items-store.js';
+import {
+  listItems,
+  findItem,
+  insertItems,
+  patchItem,
+  removeItem,
+  createItemRecord
+} from './_lib/items-store.js';
 import { isPasswordAllowed } from './_lib/auth.js';
 import { validateCreatePayload, validatePatchPayload, createSortComparator } from './_lib/validation.js';
 import { getMember } from './_lib/spaces.js';
 
 // Alan bağlamı: istek bir alana üyeyse öğeler o alanla sınırlanır.
-// Henüz alanı olmayan kurulumlarda (eski kayıtlar) space_id boş kalır.
 async function resolveSpace(req) {
   const spaceId = String(req.headers['x-space-id'] || '');
   const memberId = String(req.headers['x-member-id'] || '');
   if (!spaceId || !memberId) return null;
   const member = await getMember(spaceId, memberId);
   return member ? spaceId : null;
-}
-
-function belongsToSpace(item, spaceId) {
-  if (!spaceId) return !item.space_id;
-  return item.space_id === spaceId;
 }
 
 async function readBody(req) {
@@ -58,30 +59,21 @@ export default async function handler(req, res) {
     const spaceId = await resolveSpace(req);
 
     if (req.method === 'GET') {
-      const items = (await readItems())
-        .filter((item) => belongsToSpace(item, spaceId))
-        .sort(createSortComparator());
+      const items = (await listItems(spaceId)).sort(createSortComparator());
       return jsonResponse(res, 200, { ok: true, items });
     }
 
     if (req.method === 'POST') {
       const payload = await readBody(req);
       const validated = validateCreatePayload(payload);
-      const items = await readItems();
       const item = createItemRecord({
         ...validated,
         space_id: spaceId,
         priority: Number(validated.priority),
-        status: validated.status,
         note: validated.note || '',
-        image_url: null,
-        image_path: null,
-        image_credit: null,
-        image_tried: false,
         price: validated.price ?? null
       });
-      items.push(item);
-      await writeItems(items);
+      await insertItems([item]);
       return jsonResponse(res, 201, { ok: true, item });
     }
 
@@ -93,18 +85,10 @@ export default async function handler(req, res) {
 
       const payload = await readBody(req);
       const validated = validatePatchPayload(payload);
-      const items = await readItems();
-      const targetId = String(id);
-      const index = items.findIndex(
-        (item) => String(item.id) === targetId && belongsToSpace(item, spaceId)
-      );
-      if (index === -1) {
+      const updated = await patchItem(String(id), spaceId, validated);
+      if (!updated) {
         return jsonResponse(res, 404, { ok: false, error: 'Item not found.' });
       }
-
-      const updated = { ...items[index], ...validated };
-      items[index] = updated;
-      await writeItems(items);
       return jsonResponse(res, 200, { ok: true, item: updated });
     }
 
@@ -114,20 +98,18 @@ export default async function handler(req, res) {
         return jsonResponse(res, 400, { ok: false, error: 'Missing item id.' });
       }
 
-      const items = await readItems();
-      const next = items.filter(
-        (item) => !(String(item.id) === String(id) && belongsToSpace(item, spaceId))
-      );
-      if (next.length === items.length) {
+      const existing = await findItem(String(id), spaceId);
+      if (!existing) {
         return jsonResponse(res, 404, { ok: false, error: 'Item not found.' });
       }
 
-      await writeItems(next);
+      await removeItem(String(id), spaceId);
       return jsonResponse(res, 200, { ok: true });
     }
 
     return jsonResponse(res, 405, { ok: false, error: 'Method not allowed.' });
   } catch (error) {
+    console.error('[items] failed', req.method, error?.message);
     const message = error?.message || 'Unexpected server error.';
     return jsonResponse(res, 400, { ok: false, error: message });
   }

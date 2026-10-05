@@ -19,14 +19,14 @@ cd hommie
 npm install
 ```
 
-## 3. Storage
+## 3. Database (Neon)
 
-No external database is needed.
+Hommie stores spaces, members, invite codes and items in **Neon** (serverless Postgres).
 
-- **On Netlify:** data lives in Netlify Blobs (store name `hommie`), which is enabled automatically for linked sites. Keys: `items`, `spaces`, `jobs/<id>`.
-- **Locally:** the same data is written to the git-ignored `.data/` directory.
-
-The item list is seeded on first read, so a fresh deploy starts with the default checklist.
+- On Netlify, install the **Neon** extension (Site → Extensions) — it provisions a database and sets `NETLIFY_DATABASE_URL` for you. A manually created Neon project works too: put its connection string in `DATABASE_URL`.
+- Tables (`spaces`, `members`, `items`) are created automatically on the first request; no migration step to run.
+- If a previous deploy kept data in Netlify Blobs, it is copied into Neon once, the first time the empty database is reached.
+- With no connection string set, the app falls back to the git-ignored `.data/` directory. That is for local development only — serverless filesystems are ephemeral, so never run production without a database.
 
 ## 4. Environment variables
 
@@ -38,6 +38,7 @@ cp .env.example .env
 
 Variables:
 
+- `DATABASE_URL`: Neon connection string (not needed if the Netlify Neon extension sets `NETLIFY_DATABASE_URL`)
 - `NVIDIA_API_KEY`: for the chat and vision APIs
 - `NVIDIA_TEXT_MODEL`: text model name (default `openai/gpt-oss-20b`)
 - `NVIDIA_VISION_MODEL`: vision model name (default `meta/llama-3.2-11b-vision-instruct`)

@@ -11,7 +11,7 @@ import {
   publicSpace,
   publicMember
 } from './_lib/spaces.js';
-import { readItems, writeItems } from './_lib/items-store.js';
+import { adoptOrphanItems, deleteItemsBySpace } from './_lib/items-store.js';
 
 async function readBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
@@ -38,17 +38,6 @@ async function readBody(req) {
     });
     req.on('error', reject);
   });
-}
-
-// İlk alan açıldığında, alan kavramından önce eklenmiş öğeler sahipsiz kalmasın.
-async function adoptOrphanItems(spaceId) {
-  const items = await readItems();
-  const orphans = items.filter((item) => !item.space_id);
-  if (orphans.length === 0) return;
-  orphans.forEach((item) => {
-    item.space_id = spaceId;
-  });
-  await writeItems(items);
 }
 
 async function requireMembership(req) {
@@ -148,9 +137,7 @@ export default async function handler(req, res) {
       // davet kodu sahipsiz bir alana erişim vermeye devam ederdi.
       const remaining = await listMembers(context.space.id);
       if (remaining.length === 0) {
-        const items = await readItems();
-        const kept = items.filter((item) => item.space_id !== context.space.id);
-        if (kept.length !== items.length) await writeItems(kept);
+        await deleteItemsBySpace(context.space.id);
         await deleteSpace(context.space.id);
         return res.status(200).json({ ok: true, left: isSelf, spaceDeleted: true });
       }

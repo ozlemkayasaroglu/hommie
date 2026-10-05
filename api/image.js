@@ -1,4 +1,4 @@
-import { readItems, writeItems } from './_lib/items-store.js';
+import { findItem, patchItem } from './_lib/items-store.js';
 import { isPasswordAllowed } from './_lib/auth.js';
 
 async function readBody(req) {
@@ -42,17 +42,18 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'Missing item id or name.' });
     }
 
-    const items = await readItems();
-    const itemIndex = items.findIndex((item) => String(item.id) === String(itemId));
-    if (itemIndex === -1) {
+    const spaceId = String(req.headers['x-space-id'] || '') || null;
+    const existing = await findItem(String(itemId), spaceId);
+    if (!existing) {
       return res.status(404).json({ ok: false, error: 'Item not found.' });
     }
 
+    const markTried = (extra = {}) => patchItem(String(itemId), spaceId, { image_tried: true, ...extra });
+
     const apiKey = process.env.PEXELS_API_KEY;
     if (!apiKey) {
-      items[itemIndex].image_tried = true;
-      await writeItems(items);
-      return res.status(200).json({ ok: true, item: items[itemIndex], fallback: true });
+      const item = await markTried();
+      return res.status(200).json({ ok: true, item, fallback: true });
     }
 
     try {
@@ -62,28 +63,25 @@ export default async function handler(req, res) {
       });
 
       if (!response.ok) {
-        items[itemIndex].image_tried = true;
-        await writeItems(items);
-        return res.status(200).json({ ok: true, item: items[itemIndex], fallback: true });
+        const item = await markTried();
+        return res.status(200).json({ ok: true, item, fallback: true });
       }
 
       const data = await response.json();
       const photo = data?.photos?.[0];
       if (!photo) {
-        items[itemIndex].image_tried = true;
-        await writeItems(items);
-        return res.status(200).json({ ok: true, item: items[itemIndex], fallback: true });
+        const item = await markTried();
+        return res.status(200).json({ ok: true, item, fallback: true });
       }
 
-      items[itemIndex].image_url = photo.src?.medium || photo.src?.original || null;
-      items[itemIndex].image_credit = photo.photographer || 'Pexels';
-      items[itemIndex].image_tried = true;
-      await writeItems(items);
-      return res.status(200).json({ ok: true, item: items[itemIndex] });
+      const item = await markTried({
+        image_url: photo.src?.medium || photo.src?.original || null,
+        image_credit: photo.photographer || 'Pexels'
+      });
+      return res.status(200).json({ ok: true, item });
     } catch {
-      items[itemIndex].image_tried = true;
-      await writeItems(items);
-      return res.status(200).json({ ok: true, item: items[itemIndex], fallback: true });
+      const item = await markTried();
+      return res.status(200).json({ ok: true, item, fallback: true });
     }
   } catch (error) {
     const message = error?.message || 'Image lookup failed.';

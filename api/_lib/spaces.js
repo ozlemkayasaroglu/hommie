@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { isDbEnabled, sqlReady } from './db.js';
 import { readJson, writeJson } from './store.js';
 
 const SPACES_KEY = 'spaces';
@@ -26,22 +27,27 @@ export function normalizeCode(value) {
   return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-function generateInviteCode(existing) {
-  const taken = new Set(existing.map((space) => space.invite_code));
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    let code = '';
-    for (let i = 0; i < CODE_LENGTH; i += 1) {
-      code += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
-    }
-    if (!taken.has(code)) return code;
+function randomCode() {
+  let code = '';
+  for (let i = 0; i < CODE_LENGTH; i += 1) {
+    code += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
   }
-  return randomUUID().slice(0, CODE_LENGTH).toUpperCase();
+  return code;
 }
 
 function cleanName(value, max, fallback) {
   const trimmed = String(value || '').trim().replace(/\s+/g, ' ');
   if (!trimmed) return fallback;
   return trimmed.slice(0, max);
+}
+
+function normalizeRow(row) {
+  if (!row) return null;
+  const out = { ...row };
+  ['created_at', 'joined_at'].forEach((key) => {
+    if (out[key] instanceof Date) out[key] = out[key].toISOString();
+  });
+  return out;
 }
 
 export function publicSpace(space) {
@@ -66,11 +72,10 @@ export function publicMember(member) {
 }
 
 export async function createSpace({ spaceName, memberName }) {
-  const store = await readStore();
   const space = {
     id: randomUUID(),
     name: cleanName(spaceName, SPACE_NAME_MAX, 'Evim'),
-    invite_code: generateInviteCode(store.spaces),
+    invite_code: randomCode(),
     created_at: new Date().toISOString()
   };
   const member = {
@@ -81,16 +86,60 @@ export async function createSpace({ spaceName, memberName }) {
     joined_at: new Date().toISOString()
   };
 
-  store.spaces.push(space);
-  store.members.push(member);
-  await writeStore(store);
+  if (!isDbEnabled()) {
+    const store = await readStore();
+    const taken = new Set(store.spaces.map((entry) => entry.invite_code));
+    while (taken.has(space.invite_code)) space.invite_code = randomCode();
+    store.spaces.push(space);
+    store.members.push(member);
+    await writeStore(store);
+    return { space, member };
+  }
+
+  const sql = await sqlReady();
+  // invite_code benzersiz; çakışırsa yeni kod üretip tekrar dene.
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    try {
+      await sql`
+        INSERT INTO spaces (id, name, invite_code, created_at)
+        VALUES (${space.id}, ${space.name}, ${space.invite_code}, ${space.created_at})
+      `;
+      break;
+    } catch (error) {
+      if (!String(error?.message || '').includes('duplicate key')) throw error;
+      space.invite_code = randomCode();
+      if (attempt === 9) throw error;
+    }
+  }
+  await sql`
+    INSERT INTO members (id, space_id, name, role, joined_at)
+    VALUES (${member.id}, ${member.space_id}, ${member.name}, ${member.role}, ${member.joined_at})
+  `;
   return { space, member };
 }
 
 export async function joinSpace({ code, memberName }) {
-  const store = await readStore();
   const normalized = normalizeCode(code);
-  const space = store.spaces.find((entry) => entry.invite_code === normalized);
+
+  if (!isDbEnabled()) {
+    const store = await readStore();
+    const space = store.spaces.find((entry) => entry.invite_code === normalized);
+    if (!space) return null;
+    const member = {
+      id: randomUUID(),
+      space_id: space.id,
+      name: cleanName(memberName, MEMBER_NAME_MAX, 'Yeni üye'),
+      role: 'üye',
+      joined_at: new Date().toISOString()
+    };
+    store.members.push(member);
+    await writeStore(store);
+    return { space, member };
+  }
+
+  const sql = await sqlReady();
+  const rows = await sql`SELECT * FROM spaces WHERE invite_code = ${normalized}`;
+  const space = normalizeRow(rows[0]);
   if (!space) return null;
 
   const member = {
@@ -100,56 +149,88 @@ export async function joinSpace({ code, memberName }) {
     role: 'üye',
     joined_at: new Date().toISOString()
   };
-  store.members.push(member);
-  await writeStore(store);
+  await sql`
+    INSERT INTO members (id, space_id, name, role, joined_at)
+    VALUES (${member.id}, ${member.space_id}, ${member.name}, ${member.role}, ${member.joined_at})
+  `;
   return { space, member };
 }
 
 export async function getSpace(spaceId) {
-  const store = await readStore();
-  return store.spaces.find((space) => space.id === spaceId) || null;
+  if (!isDbEnabled()) {
+    const store = await readStore();
+    return store.spaces.find((space) => space.id === spaceId) || null;
+  }
+  const sql = await sqlReady();
+  const rows = await sql`SELECT * FROM spaces WHERE id = ${spaceId}`;
+  return normalizeRow(rows[0]);
 }
 
 export async function getMember(spaceId, memberId) {
-  const store = await readStore();
-  return store.members.find((member) => member.id === memberId && member.space_id === spaceId) || null;
+  if (!isDbEnabled()) {
+    const store = await readStore();
+    return store.members.find((m) => m.id === memberId && m.space_id === spaceId) || null;
+  }
+  const sql = await sqlReady();
+  const rows = await sql`SELECT * FROM members WHERE id = ${memberId} AND space_id = ${spaceId}`;
+  return normalizeRow(rows[0]);
 }
 
 export async function listMembers(spaceId) {
-  const store = await readStore();
-  return store.members
-    .filter((member) => member.space_id === spaceId)
-    .sort((a, b) => new Date(a.joined_at) - new Date(b.joined_at));
+  if (!isDbEnabled()) {
+    const store = await readStore();
+    return store.members
+      .filter((member) => member.space_id === spaceId)
+      .sort((a, b) => new Date(a.joined_at) - new Date(b.joined_at));
+  }
+  const sql = await sqlReady();
+  const rows = await sql`SELECT * FROM members WHERE space_id = ${spaceId} ORDER BY joined_at ASC`;
+  return rows.map(normalizeRow);
 }
 
 export async function renameSpace(spaceId, name) {
-  const store = await readStore();
-  const space = store.spaces.find((entry) => entry.id === spaceId);
-  if (!space) return null;
-  space.name = cleanName(name, SPACE_NAME_MAX, space.name);
-  await writeStore(store);
-  return space;
+  if (!isDbEnabled()) {
+    const store = await readStore();
+    const space = store.spaces.find((entry) => entry.id === spaceId);
+    if (!space) return null;
+    space.name = cleanName(name, SPACE_NAME_MAX, space.name);
+    await writeStore(store);
+    return space;
+  }
+  const current = await getSpace(spaceId);
+  if (!current) return null;
+  const sql = await sqlReady();
+  const rows = await sql`
+    UPDATE spaces SET name = ${cleanName(name, SPACE_NAME_MAX, current.name)}
+    WHERE id = ${spaceId} RETURNING *
+  `;
+  return normalizeRow(rows[0]);
 }
 
 export async function removeMember(spaceId, memberId) {
-  const store = await readStore();
-  const before = store.members.length;
-  store.members = store.members.filter(
-    (member) => !(member.id === memberId && member.space_id === spaceId)
-  );
-  if (store.members.length === before) return false;
-  await writeStore(store);
-  return true;
+  if (!isDbEnabled()) {
+    const store = await readStore();
+    const before = store.members.length;
+    store.members = store.members.filter((m) => !(m.id === memberId && m.space_id === spaceId));
+    if (store.members.length === before) return false;
+    await writeStore(store);
+    return true;
+  }
+  const sql = await sqlReady();
+  const rows = await sql`
+    DELETE FROM members WHERE id = ${memberId} AND space_id = ${spaceId} RETURNING id
+  `;
+  return rows.length > 0;
 }
 
 export async function deleteSpace(spaceId) {
-  const store = await readStore();
-  store.spaces = store.spaces.filter((space) => space.id !== spaceId);
-  store.members = store.members.filter((member) => member.space_id !== spaceId);
-  await writeStore(store);
-}
-
-export async function hasAnySpace() {
-  const store = await readStore();
-  return store.spaces.length > 0;
+  if (!isDbEnabled()) {
+    const store = await readStore();
+    store.spaces = store.spaces.filter((space) => space.id !== spaceId);
+    store.members = store.members.filter((member) => member.space_id !== spaceId);
+    await writeStore(store);
+    return;
+  }
+  const sql = await sqlReady();
+  await sql`DELETE FROM spaces WHERE id = ${spaceId}`;
 }

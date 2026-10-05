@@ -1,4 +1,4 @@
-import { readItems, writeItems } from './_lib/items-store.js';
+import { findItem, patchItem } from './_lib/items-store.js';
 import { isPasswordAllowed } from './_lib/auth.js';
 
 async function readBody(req) {
@@ -57,20 +57,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'Invalid or oversized upload.' });
     }
 
-    const items = await readItems();
-    const index = items.findIndex((item) => String(item.id) === String(itemId));
-    if (index === -1) {
+    const spaceId = String(req.headers['x-space-id'] || '') || null;
+    const existing = await findItem(String(itemId), spaceId);
+    if (!existing) {
       return res.status(404).json({ ok: false, error: 'Item not found.' });
     }
 
-    const path = `photos/${Date.now()}-${itemId}.jpg`;
-    items[index].image_path = path;
-    items[index].image_url = dataUrl;
-    items[index].image_credit = 'Kullanıcı yüklemesi';
-    items[index].image_tried = true;
+    const updated = await patchItem(String(itemId), spaceId, {
+      image_path: `photos/${Date.now()}-${itemId}.jpg`,
+      image_url: dataUrl,
+      image_credit: 'Kullanıcı yüklemesi',
+      image_tried: true
+    });
 
-    await writeItems(items);
-    return res.status(200).json({ ok: true, item: items[index] });
+    return res.status(200).json({ ok: true, item: updated });
   } catch (error) {
     const message = error?.message || 'Upload failed.';
     return res.status(400).json({ ok: false, error: message });

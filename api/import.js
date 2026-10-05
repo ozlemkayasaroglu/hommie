@@ -1,5 +1,5 @@
 import { isPasswordAllowed } from './_lib/auth.js';
-import { readItems, writeItems, createItemRecord } from './_lib/items-store.js';
+import { listItems, insertItems, createItemRecord } from './_lib/items-store.js';
 import { getMember } from './_lib/spaces.js';
 import { parseSheet } from './_lib/sheet.js';
 
@@ -70,11 +70,9 @@ export default async function handler(req, res) {
     }
 
     const spaceId = await resolveSpace(req);
-    const items = await readItems();
+    const items = await listItems(spaceId);
     const existing = new Set(
-      items
-        .filter((item) => (spaceId ? item.space_id === spaceId : !item.space_id))
-        .map((item) => String(item.name).trim().toLocaleLowerCase('tr-TR'))
+      items.map((item) => String(item.name).trim().toLocaleLowerCase('tr-TR'))
     );
 
     const created = [];
@@ -101,7 +99,7 @@ export default async function handler(req, res) {
     }
 
     if (created.length > 0) {
-      await writeItems([...items, ...created]);
+      await insertItems(created);
     }
 
     return res.status(200).json({

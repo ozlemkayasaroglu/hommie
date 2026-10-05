@@ -47,7 +47,11 @@ async function serveStatic(req, res, url) {
   try {
     const content = await fs.readFile(target);
     const ext = path.extname(target);
-    res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
+    // Geliştirirken tarayıcının eski HTML/CSS/JS'i göstermemesi için.
+    res.writeHead(200, {
+      'Content-Type': mimeTypes[ext] || 'application/octet-stream',
+      'Cache-Control': 'no-store, must-revalidate'
+    });
     res.end(content);
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -83,6 +87,7 @@ function installResponseCompatibility(res) {
 async function routeApi(req, res, url) {
   const pathname = url.pathname;
   const handlers = {
+    '/api/health': () => import('./api/health.js'),
     '/api/items': () => import('./api/items.js'),
     '/api/spaces': () => import('./api/spaces.js'),
     '/api/import': () => import('./api/import.js'),

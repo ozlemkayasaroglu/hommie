@@ -304,7 +304,10 @@ export function renderCards() {
       <div class="card-body">
         <div class="card-header">
           <h3>${escapeHtml(item.name)}</h3>
-          <button class="icon-button" data-action="delete" data-id="${item.id}" aria-label="${escapeHtml(item.name)} öğesini sil">×</button>
+          <div class="card-tools">
+            <button class="icon-button" data-action="edit" data-id="${item.id}" aria-label="${escapeHtml(item.name)} öğesini düzenle" title="Düzenle">✎</button>
+            <button class="icon-button" data-action="delete" data-id="${item.id}" aria-label="${escapeHtml(item.name)} öğesini sil" title="Sil">×</button>
+          </div>
         </div>
 
         <div class="meta-row">
@@ -332,7 +335,6 @@ export function renderCards() {
             >${choice.label}</button>`,
             ).join("")}
           </div>
-          <button class="secondary-action" data-action="edit" data-id="${item.id}">Düzenle</button>
         </div>
       </div>
     </article>

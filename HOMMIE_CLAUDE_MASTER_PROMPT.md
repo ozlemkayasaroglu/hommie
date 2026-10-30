@@ -47,7 +47,7 @@ naming who it is for:
 
 `Vibe-coded with 🧡 and plain vanilla JS — for everyone starting fresh.`
 
-Altındaki Türkçe alt satır ("Yeni bir başlangıç yapan herkes için. El emeği göz nuru değil; zihin emeği, prompt nuru. 🧠✨") bu istisnanın parçasıdır — uygulamanın kime yazıldığını söyler ve deyimle oynayan bir şaka yapar.
+Footer tek satırdır; altında açıklama metni yoktur.
 
 Hero'nun maskotu vitray mozaik tarzındaki **baykuş**tur (`/assets/owl.png`). Arayüzdeki baykuş emojisi 🦉 ile aynı karakteri temsil eder.
 

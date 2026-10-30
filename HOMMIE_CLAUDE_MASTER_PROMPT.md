@@ -42,12 +42,12 @@ The hero is brand territory and stays in English on purpose:
 
 ### Exception: the footer
 
-The footer credit line is brand territory too and stays in English, with a
-deliberately romantic sign-off:
+The footer credit line is brand territory too and stays in English, with a sign-off
+naming who it is for:
 
-`Vibe-coded with 🧡 and plain vanilla JS — for lovey.`
+`Vibe-coded with 🧡 and plain vanilla JS — for everyone starting fresh.`
 
-Altındaki Türkçe alt satır ("El emeği göz nuru değil; zihin emeği, prompt nuru. 🧠✨") bu istisnanın parçasıdır — deyimin kendisiyle oynayan bir şaka.
+Altındaki Türkçe alt satır ("Yeni bir başlangıç yapan herkes için. El emeği göz nuru değil; zihin emeği, prompt nuru. 🧠✨") bu istisnanın parçasıdır — uygulamanın kime yazıldığını söyler ve deyimle oynayan bir şaka yapar.
 
 Hero'nun maskotu vitray mozaik tarzındaki **baykuş**tur (`/assets/owl.png`). Arayüzdeki baykuş emojisi 🦉 ile aynı karakteri temsil eder.
 

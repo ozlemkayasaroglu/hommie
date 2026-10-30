@@ -10,6 +10,8 @@ import {
   fetchComments,
   createComment,
   deleteComment,
+  fetchNotifications,
+  markNotificationsRead,
   createSpace,
   joinSpace,
   recoverSpace,
@@ -28,6 +30,8 @@ import {
   renderPhotoPanel,
   renderPhotoSuggestions,
   renderSpace,
+  renderNotifications,
+  renderMentionMenu,
   showToast
 } from './ui.js';
 import { renderBilge } from './bilge.js';
@@ -51,6 +55,7 @@ function renderAll() {
   renderPhotoPanel();
   renderPhotoSuggestions();
   renderSpace();
+  renderNotifications();
 }
 
 function openItemModal(item = null) {
@@ -110,9 +115,16 @@ async function loadItems({ silent = false } = {}) {
       }
     }
 
-    const [refreshed, commentResult] = await Promise.all([fetchItems(), fetchComments()]);
+    const [refreshed, commentResult, notificationResult] = await Promise.all([
+      fetchItems(),
+      fetchComments(),
+      fetchNotifications()
+    ]);
     state.items = refreshed;
     state.comments = Array.isArray(commentResult?.comments) ? commentResult.comments : [];
+    state.notifications = Array.isArray(notificationResult?.notifications)
+      ? notificationResult.notifications
+      : [];
     renderAll();
   } catch (error) {
     if (error?.message === 'unauthorized') {
@@ -441,6 +453,22 @@ function setupEvents() {
 
   document.body.addEventListener('submit', handleCommentSubmit);
 
+  // "@" yazarken üye önerisi
+  document.body.addEventListener('input', (event) => {
+    if (event.target.matches('.comment-input')) renderMentionMenu(event.target);
+  });
+
+  document.body.addEventListener('click', (event) => {
+    const option = event.target.closest('[data-mention]');
+    if (!option) return;
+    const form = option.closest('.comment-form');
+    const input = form?.querySelector('.comment-input');
+    if (!input) return;
+    input.value = input.value.replace(/@([^@\n]*)$/, `@${option.dataset.mention} `);
+    document.querySelectorAll('.mention-menu').forEach((menu) => menu.remove());
+    input.focus();
+  });
+
   // Enter gönderir, Shift+Enter alt satıra geçer.
   document.body.addEventListener('keydown', (event) => {
     if (!event.target.matches('.comment-input')) return;
@@ -713,6 +741,7 @@ async function handleCommentSubmit(event) {
   if (!text) return;
 
   input.value = '';
+  document.querySelectorAll('.mention-menu').forEach((menu) => menu.remove());
   try {
     state.isMutating = true;
     const result = await createComment(form.dataset.id, text);
@@ -724,6 +753,58 @@ async function handleCommentSubmit(event) {
   } finally {
     state.isMutating = false;
   }
+}
+
+function setupNotificationEvents() {
+  document.getElementById('notificationButton').addEventListener('click', (event) => {
+    event.stopPropagation();
+    state.notificationsOpen = !state.notificationsOpen;
+    renderNotifications();
+  });
+
+  document.getElementById('markAllRead').addEventListener('click', async () => {
+    try {
+      const result = await markNotificationsRead();
+      state.notifications = result.notifications || [];
+      renderNotifications();
+    } catch (error) {
+      showToast(error?.message || 'Bildirimler güncellenemedi.');
+    }
+  });
+
+  document.getElementById('notificationList').addEventListener('click', async (event) => {
+    const row = event.target.closest('[data-notification]');
+    if (!row) return;
+
+    const itemId = row.dataset.item;
+    state.notificationsOpen = false;
+    try {
+      const result = await markNotificationsRead(row.dataset.notification);
+      state.notifications = result.notifications || [];
+    } catch {
+      // okundu işareti başarısız olsa da karta gitmeyi sürdür
+    }
+
+    // Etiketlendiğin kart hangi sekmede olursa olsun görünsün.
+    state.activeTab = 'all';
+    state.activeRoom = 'Genel';
+    renderAll();
+
+    const card = document.querySelector(`.item-card[data-id="${itemId}"]`);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('highlight');
+      setTimeout(() => card.classList.remove('highlight'), 2000);
+    }
+  });
+
+  // Panel dışına tıklayınca kapansın.
+  document.body.addEventListener('click', (event) => {
+    if (!state.notificationsOpen) return;
+    if (event.target.closest('.notification-wrap')) return;
+    state.notificationsOpen = false;
+    renderNotifications();
+  });
 }
 
 function startPolling() {
@@ -744,6 +825,7 @@ async function boot() {
   renderAll();
   setupEvents();
   setupSpaceEvents();
+  setupNotificationEvents();
   await refreshSpace();
   if (state.spaceId) await loadItems();
   startPolling();

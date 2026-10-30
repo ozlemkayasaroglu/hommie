@@ -1,4 +1,4 @@
-import { state, getSummary, getVisibleItems, getTabCounts, getItemComments, isDone, escapeHtml, isSpaceOwner } from "./state.js";
+import { state, getSummary, getVisibleItems, getTabCounts, getItemComments, getUnreadCount, isDone, escapeHtml, isSpaceOwner } from "./state.js";
 import { resolveIconSvg } from "./icons.js";
 
 const roomColorMap = {
@@ -202,6 +202,22 @@ function timeAgo(value) {
   return new Date(value).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
 }
 
+// Metin önce kaçırılır, sonra üye adlarıyla eşleşen @etiketler işaretlenir.
+function highlightMentions(text) {
+  let html = escapeHtml(text);
+  const names = state.members
+    .map((member) => member.name)
+    .sort((a, b) => b.length - a.length);
+  names.forEach((name) => {
+    const safe = escapeHtml(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    html = html.replace(
+      new RegExp(`@${safe}`, "gi"),
+      (match) => `<span class="mention">${match}</span>`,
+    );
+  });
+  return html;
+}
+
 function renderComments(item) {
   const comments = getItemComments(item.id);
 
@@ -218,7 +234,7 @@ function renderComments(item) {
             <span class="comment-time">${escapeHtml(timeAgo(comment.created_at))}</span>
             ${canDelete ? `<button type="button" class="comment-delete" data-action="delete-comment" data-id="${comment.id}" aria-label="Yorumu sil">×</button>` : ""}
           </div>
-          <p class="comment-text">${escapeHtml(comment.text)}</p>
+          <p class="comment-text">${highlightMentions(comment.text)}</p>
         </div>
       </li>`;
     })
@@ -473,4 +489,66 @@ export function renderSpace() {
       })
       .join("");
   }
+}
+
+export function renderNotifications() {
+  const button = document.getElementById("notificationButton");
+  const badge = document.getElementById("notificationBadge");
+  const panel = document.getElementById("notificationPanel");
+  const list = document.getElementById("notificationList");
+  if (!button || !panel || !list) return;
+
+  const unread = getUnreadCount();
+  badge.hidden = unread === 0;
+  badge.textContent = unread > 9 ? "9+" : String(unread);
+  panel.hidden = !state.notificationsOpen;
+
+  if (state.notifications.length === 0) {
+    list.innerHTML = `<li class="notification-empty">Henüz bildirim yok.</li>`;
+    return;
+  }
+
+  list.innerHTML = state.notifications
+    .map(
+      (n) => `
+    <li class="notification ${n.read_at ? "" : "unread"}" data-notification="${n.id}" data-item="${n.item_id || ""}">
+      <div class="notification-title">
+        <strong>${escapeHtml(n.actor_name)}</strong> seni etiketledi
+        <span class="notification-time">${escapeHtml(timeAgo(n.created_at))}</span>
+      </div>
+      <div class="notification-item">${escapeHtml(n.item_name || "Bir kayıt")}</div>
+      <p class="notification-excerpt">${escapeHtml(n.excerpt)}</p>
+    </li>`,
+    )
+    .join("");
+}
+
+// Yorum kutusunda "@" yazılınca üye listesini öneren küçük tamamlayıcı.
+export function renderMentionMenu(input) {
+  document.querySelectorAll(".mention-menu").forEach((menu) => menu.remove());
+
+  const value = input.value;
+  const caret = input.selectionStart ?? value.length;
+  const upto = value.slice(0, caret);
+  const match = upto.match(/@([^@\n]*)$/);
+  if (!match) return;
+
+  const query = match[1].toLocaleLowerCase("tr-TR");
+  const candidates = state.members
+    .filter((member) => member.id !== state.memberId)
+    .filter((member) => member.name.toLocaleLowerCase("tr-TR").startsWith(query));
+  if (candidates.length === 0) return;
+
+  const menu = document.createElement("ul");
+  menu.className = "mention-menu";
+  menu.innerHTML = candidates
+    .map(
+      (member) => `
+    <li><button type="button" class="mention-option" data-mention="${escapeHtml(member.name)}">
+      <span class="comment-avatar" style="background:${memberColor(member.id)}">${escapeHtml(memberInitials(member.name))}</span>
+      ${escapeHtml(member.name)}
+    </button></li>`,
+    )
+    .join("");
+  input.closest(".comment-form")?.appendChild(menu);
 }

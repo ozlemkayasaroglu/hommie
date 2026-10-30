@@ -81,6 +81,23 @@ export function ensureSchema() {
         created_at timestamptz NOT NULL DEFAULT now()
       )
     `;
+    await sql`ALTER TABLE comments ADD COLUMN IF NOT EXISTS mentions jsonb`;
+    await sql`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id uuid PRIMARY KEY,
+        space_id uuid REFERENCES spaces(id) ON DELETE CASCADE,
+        member_id uuid NOT NULL,
+        actor_name text NOT NULL DEFAULT '',
+        item_id uuid REFERENCES items(id) ON DELETE CASCADE,
+        item_name text NOT NULL DEFAULT '',
+        comment_id uuid REFERENCES comments(id) ON DELETE CASCADE,
+        excerpt text NOT NULL DEFAULT '',
+        read_at timestamptz,
+        created_at timestamptz NOT NULL DEFAULT now()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS notifications_member_idx ON notifications(member_id, created_at DESC)`;
+
     await sql`CREATE INDEX IF NOT EXISTS comments_item_idx ON comments(item_id)`;
     await sql`CREATE INDEX IF NOT EXISTS comments_space_idx ON comments(space_id)`;
 

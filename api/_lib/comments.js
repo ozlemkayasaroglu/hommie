@@ -10,6 +10,7 @@ function normalizeRow(row) {
   if (!row) return null;
   return {
     ...row,
+    mentions: Array.isArray(row.mentions) ? row.mentions : [],
     created_at: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
   };
 }
@@ -21,9 +22,21 @@ async function fileAll() {
 
 const inSpace = (row, spaceId) => (spaceId ? row.space_id === spaceId : !row.space_id);
 
-export function buildComment({ itemId, spaceId, member, text }) {
+// "@Özlem Kaya" gibi etiketleri alandaki üye adlarıyla eşleştirir.
+// Uzun isimler önce denenir ki "Ali" ile "Ali Can" karışmasın.
+export function findMentions(text, members = []) {
+  const haystack = String(text || '').toLocaleLowerCase('tr-TR');
+  return members
+    .slice()
+    .sort((a, b) => b.name.length - a.name.length)
+    .filter((member) => haystack.includes('@' + member.name.toLocaleLowerCase('tr-TR')))
+    .map((member) => member.id);
+}
+
+export function buildComment({ itemId, spaceId, member, text, mentions = [] }) {
   return {
     id: randomUUID(),
+    mentions,
     item_id: itemId,
     space_id: spaceId || null,
     member_id: member?.id || null,
@@ -54,9 +67,10 @@ export async function insertComment(comment) {
   }
   const sql = await sqlReady();
   await sql`
-    INSERT INTO comments (id, item_id, space_id, member_id, member_name, text, created_at)
+    INSERT INTO comments (id, item_id, space_id, member_id, member_name, text, mentions, created_at)
     VALUES (${comment.id}, ${comment.item_id}, ${comment.space_id}, ${comment.member_id},
-            ${comment.member_name}, ${comment.text}, ${comment.created_at})
+            ${comment.member_name}, ${comment.text}, ${JSON.stringify(comment.mentions || [])},
+            ${comment.created_at})
   `;
   return comment;
 }

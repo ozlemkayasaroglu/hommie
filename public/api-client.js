@@ -152,3 +152,14 @@ export async function createComment(itemId, text) {
 export async function deleteComment(id) {
   return apiFetch(`/api/comments?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
+
+export async function fetchNotifications() {
+  return apiFetch('/api/notifications');
+}
+
+export async function markNotificationsRead(id) {
+  return apiFetch('/api/notifications', {
+    method: 'POST',
+    body: JSON.stringify(id ? { id } : {})
+  });
+}

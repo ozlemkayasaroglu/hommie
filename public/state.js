@@ -1,6 +1,8 @@
 export const state = {
   items: [],
   comments: [],
+  notifications: [],
+  notificationsOpen: false,
   activeRoom: 'Genel',
   statusFilter: 'Tümü',
   priorityFilter: 'Tümü',
@@ -29,6 +31,10 @@ export const DONE_STATUS = 'Tamamlandı';
 
 export function getItemComments(itemId) {
   return state.comments.filter((comment) => comment.item_id === itemId);
+}
+
+export function getUnreadCount() {
+  return state.notifications.filter((n) => !n.read_at).length;
 }
 
 export function isDone(item) {

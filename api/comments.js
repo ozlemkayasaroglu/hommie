@@ -1,5 +1,5 @@
 import { isPasswordAllowed } from './_lib/auth.js';
-import { getMember } from './_lib/spaces.js';
+import { getMember, listMembers } from './_lib/spaces.js';
 import { findItem } from './_lib/items-store.js';
 import {
   listComments,
@@ -7,8 +7,10 @@ import {
   findComment,
   removeComment,
   buildComment,
+  findMentions,
   COMMENT_MAX
 } from './_lib/comments.js';
+import { buildNotification, insertNotifications } from './_lib/notifications.js';
 
 async function readBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
@@ -71,8 +73,27 @@ export default async function handler(req, res) {
       const item = await findItem(itemId, spaceId);
       if (!item) return res.status(404).json({ ok: false, error: 'Kayıt bulunamadı.' });
 
-      const comment = buildComment({ itemId, spaceId, member, text });
+      const members = spaceId ? await listMembers(spaceId) : [];
+      const mentions = findMentions(text, members);
+      const comment = buildComment({ itemId, spaceId, member, text, mentions });
       await insertComment(comment);
+
+      // Etiketlenen herkese bildirim; kendini etiketlemek bildirim üretmez.
+      const targets = mentions.filter((id) => id !== member?.id);
+      if (targets.length > 0) {
+        await insertNotifications(
+          targets.map((memberId) =>
+            buildNotification({
+              spaceId,
+              memberId,
+              actorName: member?.name,
+              item,
+              comment
+            })
+          )
+        );
+      }
+
       return res.status(201).json({ ok: true, comment });
     }
 

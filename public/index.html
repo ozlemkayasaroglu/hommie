@@ -26,15 +26,35 @@
             <span class="space-eyebrow">Burası</span>
             <h2 id="spacePanelName" class="space-panel-name"></h2>
           </div>
-          <button
-            type="button"
-            id="spaceButton"
-            class="icon-button space-settings-button"
-            aria-label="Alan ayarları"
-            title="Alan ayarları"
-          >
-            ⚙
-          </button>
+          <div class="space-panel-tools">
+            <div class="notification-wrap">
+              <button
+                type="button"
+                id="notificationButton"
+                class="icon-button"
+                aria-label="Bildirimler"
+                title="Bildirimler"
+              >
+                🔔<span id="notificationBadge" class="notification-badge" hidden>0</span>
+              </button>
+              <div id="notificationPanel" class="notification-panel" hidden>
+                <div class="notification-head">
+                  <span>Bildirimler</span>
+                  <button type="button" id="markAllRead" class="mini-btn">Tümünü okundu say</button>
+                </div>
+                <ul id="notificationList" class="notification-list"></ul>
+              </div>
+            </div>
+            <button
+              type="button"
+              id="spaceButton"
+              class="icon-button space-settings-button"
+              aria-label="Alan ayarları"
+              title="Alan ayarları"
+            >
+              ⚙
+            </button>
+          </div>
         </div>
 
         <div id="spaceMembers" class="space-members"></div>

@@ -90,6 +90,7 @@ async function routeApi(req, res, url) {
     '/api/health': () => import('./api/health.js'),
     '/api/items': () => import('./api/items.js'),
     '/api/comments': () => import('./api/comments.js'),
+    '/api/notifications': () => import('./api/notifications.js'),
     '/api/spaces': () => import('./api/spaces.js'),
     '/api/import': () => import('./api/import.js'),
     '/api/photo-background': () => import('./api/photo-background.js'),

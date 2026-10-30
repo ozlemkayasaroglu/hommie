@@ -124,6 +124,16 @@ Her kartın altında bir yorum akışı bulunur. Tek satırlık "Not" alanı kal
 - Enter gönderir, Shift+Enter alt satıra geçer. Yorum en fazla 1000 karakterdir.
 - Yorumlar `comments` tablosunda kayıtlıdır ve kayıt silinince birlikte silinir.
 
+### Etiketleme ve bildirimler
+
+Yorum kutusunda `@` yazınca alandaki diğer üyeler önerilir; seçilen isim `@Ad` olarak metne girer ve yorumda renkli görünür.
+
+- Etiketlenen kişiye bildirim düşer. Kendini etiketlemek bildirim üretmez.
+- Bildirimler alan şeridindeki zil düğmesinde toplanır; okunmamış sayısı rozet olarak görünür.
+- Bir bildirime tıklamak onu okundu yapar, sekmeyi "Tümü"ne alır ve ilgili kartı ekranda vurgular.
+- "Tümünü okundu say" hepsini temizler. Son 50 bildirim saklanır.
+- Eşleştirme üye adına bakar ve uzun isim önce denenir, böylece "Ali" ile "Ali Can" karışmaz.
+
 ### Sıralama
 
 Varsayılan sıralama **En yeni**'dir, yani yeni eklenen kayıt listenin en üstünde görünür. Yeni kayıt eklendiğinde sıralama "En yeni"ye döner ve "Bitenler" sekmesindeyken "Devam edenler" sekmesine geçilir ki kayıt görünür olsun.

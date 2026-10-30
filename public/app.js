@@ -233,7 +233,7 @@ async function handlePhotoAnalyze() {
     if (result?.source === 'nvidia') {
       showToast(`${state.photoStyle} tarzında ${state.photoSuggestions.length} öneri hazır.`);
     } else {
-      showToast(result?.notice || 'Zürafa cevap veremedi, örnek öneriler gösteriliyor.');
+      showToast(result?.notice || 'Baykuş cevap veremedi, örnek öneriler gösteriliyor.');
     }
   } catch (error) {
     if (error?.message === 'rate_limited') {

@@ -36,7 +36,7 @@ The product language is Turkish (tr-TR).
 The hero is brand territory and stays in English on purpose:
 
 - The title is `Messy now.` / `Home later.`
-- The typewriter line above it cycles the English nickname list (`sweetie`, `cutie`, `my love`, `xoxo`, `mine. 😏`, …).
+- The typewriter line above it cycles short, slightly cheeky phrases about the state of the home (`work in progress`, `box city`, `an IKEA graveyard`, `the plant survived`, `this is home. 😌`, …) — never pet names.
 - The brand name is written `HOMMIE` — never `Hommie` inside an uppercased element, because Turkish uppercasing turns `i` into `İ`.
 - The typewriter element carries `lang="en"` so the browser uses English casing rules.
 
@@ -48,6 +48,8 @@ deliberately romantic sign-off:
 `Vibe-coded with 🧡 and plain vanilla JS — for lovey.`
 
 Altındaki Türkçe alt satır ("El emeği göz nuru değil; zihin emeği, prompt nuru. 🧠✨") bu istisnanın parçasıdır — deyimin kendisiyle oynayan bir şaka.
+
+Hero'nun maskotu vitray mozaik tarzındaki **baykuş**tur (`/assets/owl.png`). Arayüzdeki baykuş emojisi 🦉 ile aynı karakteri temsil eder.
 
 Everything outside the hero and the footer stays Turkish, and the "no romantic
 language" rule below applies to that Turkish UI — not to these two blocks.

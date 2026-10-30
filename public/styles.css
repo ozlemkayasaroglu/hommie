@@ -161,7 +161,7 @@ a {
   margin-top: 14px;
 }
 
-.hero-giraffe {
+.hero-mascot {
   width: clamp(200px, 23vw, 300px);
   height: auto;
   display: block;
@@ -931,7 +931,7 @@ a:focus-visible {
     flex: 0 1 auto;
   }
 
-  .hero-giraffe {
+  .hero-mascot {
     max-height: 38svh;
     width: auto;
     object-fit: contain;

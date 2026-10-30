@@ -21,7 +21,7 @@ function getHeroMessage() {
   if (summary.remaining > 0 && summary.remaining <= 3)
     return "Önce acil işlere bakalım. Ben listeyi tuttum!";
   if (summary.complete > 0 && summary.remaining === 0)
-    return "Tebrikler! Artık burası gerçekten ev gibi. 🦒🏡";
+    return "Tebrikler! Artık burası gerçekten ev gibi. 🦉🏡";
   if (state.activeRoom !== "Genel")
     return `${state.activeRoom} modundayız! Bakalım burada neler eksik?`;
   return "Evi düzenlemek için ilk adımı birlikte atalım!";
@@ -30,46 +30,37 @@ function getHeroMessage() {
 function animateEyebrow(target) {
   const words = [
     "HOMMIE",
-    "sweetie",
-    "honey",
-    "cutie",
-    "darling",
-    "my love",
-    "hey, you",
-    "trouble",
-    "pretty",
-    "hot stuff",
-    "my weakness",
-    "my home",
-    "my person",
-    "roomie",
-    "favorite human",
-    "still you.",
-    "little menace",
-    "you again?",
-    "my chaos",
-    "troublemaker",
-    "partner in crime",
-    "baby",
-    "babe",
-    "sweetheart",
-    "sunshine",
-    "lovey",
-    "handsome",
-    "pretty thing",
-    "my favorite",
-    "lucky me",
-    "yours truly",
-    "come here",
-    "look at you",
-    "miss you",
-    "lovebug",
-    "boo",
-    "xoxo",
-    "just us",
-    "us, always",
-    "home sweet home",
-    "mine. 😏",
+    "work in progress",
+    "cozy chaos",
+    "box city",
+    "almost unpacked",
+    "assembly required",
+    "an IKEA graveyard",
+    "one lamp short",
+    "half a kitchen",
+    "echoey rooms",
+    "bare walls, big plans",
+    "cables everywhere",
+    "paint samples, 40 of them",
+    "a sofa, someday",
+    "curtains, eventually",
+    "the good mess",
+    "mugs > plates",
+    "cardboard castle",
+    "allen key life",
+    "the plant survived",
+    "fairy lights fix it",
+    "it has potential",
+    "smells like new paint",
+    "unpacked: 60%",
+    "still beige",
+    "future living room",
+    "nest in progress",
+    "loud neighbours, quiet nights",
+    "home-ish",
+    "almost home",
+    "a very loved mess",
+    "this is home. 😌",
   ];
 
   let wordIndex = 0;
@@ -119,7 +110,7 @@ export function renderHero() {
       <p class="hero-subtitle"></p>
     </div>
     <div class="hero-visual">
-      <img class="hero-giraffe" src="/assets/giraffe.png" alt="Hommie zürafa" />
+      <img class="hero-mascot" src="/assets/owl.png" alt="Hommie baykuşu" />
     </div>
   `;
 
